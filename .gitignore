@@ -3,3 +3,9 @@ venv/
 __pycache__/
 *.pyc
 .claude/
+
+# risk_profile_app: 파이프라인 실행 결과물(재생성 가능한 데이터/모델)은 제외
+risk_profile_app/investment_users.csv
+risk_profile_app/stock_data.csv
+risk_profile_app/scored_stocks.csv
+risk_profile_app/risk_model.pkl
