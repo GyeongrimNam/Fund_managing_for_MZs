@@ -1,0 +1,359 @@
+/* ============================================================
+   survey.css - Survey 화면 전용 스타일
+   기능은 Streamlit widget을 유지하고, .fomo-survey-page marker가 있는
+   Survey 화면에서만 스타일이 적용되도록 범위를 제한한다.
+   ============================================================ */
+
+.stApp:has(.fomo-survey-page) {
+    background: #ffffff;
+}
+
+.stApp:has(.fomo-survey-page) header[data-testid="stHeader"],
+.stApp:has(.fomo-survey-page) div[data-testid="stToolbar"] {
+    display: none;
+}
+
+.stApp:has(.fomo-survey-page) .block-container {
+    max-width: none;
+    width: 100%;
+    min-height: auto;
+    padding: 0 0 160px;
+}
+
+.fomo-survey-header {
+    height: 72px;
+    padding: 0 clamp(28px, 4vw, 48px);
+    border-bottom: 1px solid #EEF1F5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.fomo-survey-logo {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    text-decoration: none !important;
+}
+
+.fomo-survey-logo img {
+    display: block;
+    height: 42px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+}
+
+.fomo-survey-count {
+    color: #98A2B3;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stProgress"] {
+    width: 100%;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stProgress"] > div {
+    height: 6px;
+    border-radius: 999px;
+}
+
+.fomo-survey-copy {
+    width: min(100% - 48px, 760px);
+    margin: clamp(0.75rem, 2vh, 1.75rem) auto 1rem;
+    text-align: left;
+}
+
+.fomo-survey-copy h1 {
+    margin: 1.25rem 0 0.75rem;
+    color: #111827;
+    font-size: clamp(1.7rem, 1.25vw + 1rem, 2.35rem);
+    font-weight: 900;
+    line-height: 1.18;
+    letter-spacing: 0;
+}
+
+.fomo-survey-copy p {
+    margin: 0;
+    color: #98A2B3;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+.fomo-survey-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.fomo-survey-badge.is-blue {
+    background: #EFF6FF;
+    color: #2F88FF;
+}
+
+.fomo-survey-badge.is-green {
+    background: #ECFDF3;
+    color: #12B76A;
+}
+
+.fomo-survey-badge.is-purple {
+    background: #FAF5FF;
+    color: #A855F7;
+}
+
+.fomo-survey-badge.is-orange {
+    background: #FFF7ED;
+    color: #F97316;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"],
+.stApp:has(.fomo-survey-page) div[data-testid="stRadio"],
+.stApp:has(.fomo-survey-page) div[role="radiogroup"],
+.stApp:has(.fomo-survey-page) div[data-testid="stCaptionContainer"] {
+    width: min(100% - 48px, 760px) !important;
+    min-width: min(100% - 48px, 760px) !important;
+    max-width: 760px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stElementContainer"]:has(div[data-testid="stTextInput"]),
+.stApp:has(.fomo-survey-page) div[data-testid="stElementContainer"]:has(div[data-testid="stRadio"]) {
+    width: min(100% - 48px, 760px) !important;
+    min-width: min(100% - 48px, 760px) !important;
+    max-width: 760px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"] label {
+    display: none;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"] div[data-testid="InputInstructions"] {
+    display: none !important;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"] input {
+    height: 86px;
+    border: 2px solid #E5E7EB;
+    border-radius: 20px;
+    background: #F9FAFB;
+    color: #111827;
+    font-size: 1.55rem;
+    font-weight: 800;
+    padding: 0 28px;
+    box-shadow: none;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"] input:focus {
+    border-color: #2F88FF;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(47, 136, 255, 0.12);
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stTextInput"] input::placeholder {
+    color: #CBD5E1;
+}
+
+.stApp:has(.fomo-survey-page) div[role="radiogroup"] {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stRadioGroup"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+.stApp:has(.fomo-survey-page) div[role="radiogroup"] label,
+.stApp:has(.fomo-survey-page) label[data-testid="stRadioOption"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    min-height: 48px;
+    margin: 0;
+    padding: 8px 18px;
+    border: 2px solid #EEF1F5;
+    border-radius: 16px;
+    background: #F9FAFB;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stApp:has(.fomo-survey-page) div[role="radiogroup"] label:hover {
+    border-color: rgba(47, 136, 255, 0.55);
+    background: #F4F8FF;
+}
+
+.stApp:has(.fomo-survey-page) div[role="radiogroup"] label:has(input:checked) {
+    border-color: #2F88FF;
+    background: #EFF6FF;
+    color: #1666D9;
+    box-shadow: 0 10px 24px rgba(47, 136, 255, 0.10);
+}
+
+.stApp:has(.fomo-survey-page) .stButton > button {
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1px solid #E5E7EB;
+    background: #F9FAFB;
+    color: #344054;
+    font-weight: 800;
+}
+
+.stApp:has(.fomo-survey-page) .stButton > button[kind="primary"] {
+    min-height: 54px;
+    border: none;
+    background: #2F88FF;
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(47, 136, 255, 0.24);
+}
+
+.stApp:has(.fomo-survey-page) .stButton > button:hover {
+    border-color: #2F88FF;
+    color: #1666D9;
+}
+
+.stApp:has(.fomo-survey-page) .stButton > button[kind="primary"]:hover {
+    color: #ffffff;
+    filter: brightness(1.03);
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] {
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 12px clamp(32px, 4vw, 48px) calc(16px + env(safe-area-inset-bottom)) !important;
+    border-top: none;
+    background: linear-gradient(
+        to top,
+        rgba(255, 255, 255, 0.98) 70%,
+        rgba(255, 255, 255, 0.88) 85%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    box-shadow: none;
+    backdrop-filter: none;
+    box-sizing: border-box;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] div[data-testid="stHorizontalBlock"] {
+    width: 100% !important;
+    max-width: 1320px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: max-content 1fr max-content;
+    align-items: center;
+    column-gap: 24px;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] [data-testid="column"] {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: none !important;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] [data-testid="column"]:first-child {
+    grid-column: 1;
+    justify-self: start;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] [data-testid="column"]:last-child {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] .stButton > button {
+    width: auto;
+    min-width: 116px;
+    min-height: 52px;
+    height: 52px;
+    padding: 0 20px;
+    white-space: nowrap;
+    word-break: keep-all;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stHorizontalBlock"]:has([class*="st-key-sector_btn_"]) {
+    width: min(100% - 48px, 760px) !important;
+    max-width: 760px !important;
+    margin: 6px auto 0 !important;
+    gap: 10px !important;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stElementContainer"]:has([class*="st-key-sector_btn_"]) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.stApp:has(.fomo-survey-page) [class*="st-key-sector_btn_"] .stButton > button {
+    min-height: 46px;
+    width: 100%;
+}
+
+.stApp:has(.fomo-survey-page) div[data-testid="stCaptionContainer"] {
+    margin-top: 12px !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .fomo-survey-header {
+        height: 72px;
+        padding: 0 20px;
+    }
+
+    .fomo-survey-logo img {
+        height: 42px;
+    }
+
+    .fomo-survey-copy {
+        width: min(100% - 32px, 760px);
+        margin-top: 3.25rem;
+    }
+
+    .stApp:has(.fomo-survey-page) div[data-testid="stTextInput"],
+    .stApp:has(.fomo-survey-page) div[data-testid="stRadio"],
+    .stApp:has(.fomo-survey-page) div[role="radiogroup"],
+    .stApp:has(.fomo-survey-page) div[data-testid="stCaptionContainer"] {
+        width: min(100% - 32px, 760px);
+    }
+
+    .stApp:has(.fomo-survey-page) div[role="radiogroup"] label {
+        min-height: 72px;
+        padding: 0 18px;
+    }
+
+    .stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] {
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .stApp:has(.fomo-survey-page) [class*="st-key-survey_bottom_nav"] .stButton > button {
+        min-width: 96px;
+        height: 52px;
+        padding: 0 14px;
+    }
+}

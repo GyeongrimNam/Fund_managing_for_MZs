@@ -1,0 +1,235 @@
+/* ============================================================
+   common.css — 모든 페이지(intro/survey/profile/recommend)에 적용되는 공통 스타일
+   전역 레이아웃, 공통 Streamlit 컴포넌트, 전용 Navigation 스타일만 둔다.
+   Home 전용 섹션/카드 스타일은 intro.css로 분리한다.
+   ============================================================ */
+
+:root {
+    --accent: #2F88FF;
+    --accent-dark: #1666D9;
+    --accent-soft: #EAF2FF;
+    --text-primary: #191F28;
+    --text-secondary: #6B7684;
+    --fomo-nav-height: 96px;
+    --fomo-page-x: clamp(24px, 5vw, 104px);
+    --fomo-content-max: 1440px;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.12);
+}
+
+html, body, [class*="css"] {
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+a,
+a:hover,
+a:focus,
+a:visited {
+    text-decoration: none !important;
+}
+
+html {
+    scroll-padding-top: calc(var(--fomo-nav-height) + 24px);
+}
+
+.stApp {
+    width: 100%;
+    min-height: 100vh;
+    background: #ffffff;
+}
+
+header[data-testid="stHeader"] {
+    height: 0;
+    background: transparent;
+}
+
+div[data-testid="stToolbar"] {
+    display: none;
+}
+
+/* 화면은 넓게 쓰되, 각 섹션 내부에서 읽기 좋은 폭을 다시 제한한다. */
+.block-container {
+    max-width: none;
+    width: 100%;
+    padding: calc(var(--fomo-nav-height) + 8px) var(--fomo-page-x) 4rem;
+}
+
+h1 { font-weight: 800 !important; letter-spacing: -0.5px; }
+h2, h3 { font-weight: 700 !important; }
+
+/* st.container(border=True)로 감싼 섹션을 카드처럼 표시 */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border) !important;
+    border-radius: 16px;
+    padding: 0.4rem 0.4rem;
+}
+
+/* 기본 버튼 */
+.stButton > button {
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    transition: all 0.15s ease;
+    font-weight: 600;
+}
+.stButton > button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.stButton > button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* primary 버튼(추천받기, 선택된 섹터 등) */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none;
+    color: #ffffff;
+    font-weight: 700;
+}
+.stButton > button[kind="primary"]:hover {
+    filter: brightness(1.08);
+    color: #ffffff;
+}
+
+/* 메트릭 카드 */
+div[data-testid="stMetric"] {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+}
+
+/* 경고/정보 배너, 데이터프레임 모서리 둥글게 */
+div[data-testid="stAlert"] { border-radius: 12px; }
+div[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+
+/* 라디오 문항을 pill 느낌으로 */
+div[role="radiogroup"] label {
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 2px 14px;
+    margin-right: 4px;
+}
+
+/* 전용 HTML 구조로 렌더링되는 상단 네비게이션. Streamlit columns와 분리한다. */
+.fomo-navbar-shell {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: var(--fomo-nav-height);
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid rgba(229, 232, 235, 0.9);
+    box-shadow: 0 6px 24px rgba(25, 31, 40, 0.05);
+    backdrop-filter: blur(14px);
+}
+
+.fomo-navbar-inner {
+    width: min(calc(100% - (var(--fomo-page-x) * 2)), var(--fomo-content-max));
+    height: 100%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.fomo-navbar-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex: 0 0 auto;
+    text-decoration: none !important;
+}
+
+/* 로고 높이는 이 한 곳에서만 관리한다 (다른 곳에서 margin-top/top/transform으로 보정하지 않음). */
+.fomo-navbar-logo img {
+    display: block;
+    width: auto;
+    height: 44px;
+    max-width: 180px;
+    object-fit: contain;
+    filter: saturate(1.5) contrast(1.08);
+}
+
+.fomo-navbar-text-logo {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.fomo-navbar-menu {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+}
+
+.fomo-navbar-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    color: #4E5968;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none !important;
+    white-space: nowrap;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.fomo-navbar-link:hover {
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    text-decoration: none !important;
+    transform: translateY(-1px);
+}
+
+.fomo-navbar-link.is-active {
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+}
+
+/* 공통 반응형 */
+@media (max-width: 900px) {
+    :root {
+        --fomo-nav-height: 76px;
+        --fomo-page-x: clamp(16px, 4vw, 32px);
+    }
+
+    .fomo-navbar-inner {
+        gap: 18px;
+    }
+
+    .fomo-navbar-menu {
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .fomo-navbar-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .fomo-navbar-link {
+        min-height: 38px;
+        padding: 0 11px;
+        font-size: 0.86rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: var(--fomo-page-x);
+        padding-right: var(--fomo-page-x);
+        padding-top: calc(var(--fomo-nav-height) + 10px);
+    }
+}

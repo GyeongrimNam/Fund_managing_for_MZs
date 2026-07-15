@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 190" role="img" aria-labelledby="title desc">
+  <title id="title">FOMO logo</title>
+  <desc id="desc">Blue FOMO wordmark with a smiling face inside the final O.</desc>
+
+  <defs>
+    <linearGradient id="fomoBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2587FF"/>
+      <stop offset="100%" stop-color="#00B5FF"/>
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke="url(#fomoBlue)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- F -->
+    <path d="M45 35 V155 M45 35 H150 M45 92 H132"/>
+
+    <!-- O -->
+    <circle cx="238" cy="95" r="61"/>
+
+    <!-- M -->
+    <path d="M330 155 V35 L390 122 L450 35 V155"/>
+
+    <!-- Smiling O -->
+    <circle cx="570" cy="95" r="61"/>
+    <path d="M542 113 Q570 145 598 113" stroke-width="8"/>
+    <path d="M548 75 V92 M592 75 V92" stroke-width="9"/>
+  </g>
+</svg>

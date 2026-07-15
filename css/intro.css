@@ -1,0 +1,314 @@
+/* ============================================================
+   intro.css — Home(intro) 화면 전용 스타일
+   신뢰감 있는 금융 서비스 랜딩페이지 톤: 화이트/연한 회색 배경, 파란 포인트,
+   둥근 카드, 넉넉한 여백, 은은한 등장 애니메이션.
+   모든 클래스가 .fomo- 접두사로 스코프되어 있어 다른 화면에는 영향을 주지 않는다.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   등장 애니메이션 (CSS 전용)
+   Streamlit은 st.markdown으로 넣은 <script>를 실행하지 않고, 실제 JS가 도는
+   st.components.v1.html은 별도 iframe이라 메인 페이지 DOM을 직접 관찰하려면
+   window.parent.document에 접근해야 한다. 이 방식은 rerun마다 옵저버가
+   다시 붙으며 콘텐츠가 잠깐 사라졌다 나타나는 깜빡임 위험이 있고 실행 없이
+   안정성을 검증할 수 없어서, 요청하신 대로 더 안정적인 CSS 전용 방식으로 대체했다.
+   각 섹션/카드가 로드 시 순서대로 부드럽게 fade+translateY 되며,
+   animation-fill-mode: forwards 덕분에 재생 후 항상 최종 상태(보임)로 고정된다
+   (다시 사라지지 않음). Home 화면에서만 쓰는 .fomo-* 클래스에만 걸려 있고
+   intro.css 자체도 Home 페이지에서만 로드되므로 survey/profile/recommend에는
+   전혀 적용되지 않는다.
+   ------------------------------------------------------------ */
+@keyframes fomo-fade-up {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* opacity/transform을 애니메이션이 아닌 일반 속성으로도 먼저 깔아둔다.
+   animation-delay가 끝나기 전까지는 이 기본값(숨김 상태)이 그대로 유지되므로,
+   fill-mode: forwards만으로도 "딜레이 도중 잠깐 보였다 사라지는" 깜빡임 없이
+   처음부터 끝까지 매끄럽게 이어진다. */
+.fomo-animate {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fomo-fade-up 0.7s ease-out forwards;
+}
+/* Hero: 0s / 첫 번째 설명 영역: 0.15s / 두 번째: 0.3s / 세 번째: 0.45s */
+.fomo-delay-0 { animation-delay: 0s; }
+.fomo-delay-1 { animation-delay: 0.15s; }
+.fomo-delay-2 { animation-delay: 0.3s; }
+.fomo-delay-3 { animation-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+    /* 애니메이션만 끄면 opacity:0/translateY(30px) 기본값이 그대로 남아 영원히
+       안 보이게 되므로, 최종 상태(보임)로 강제 고정한다. */
+    .fomo-animate,
+    .fomo-problem-card,
+    .fomo-step-card,
+    .fomo-feature-card {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* ------------------------------------------------------------
+   Hero 영역
+   ------------------------------------------------------------ */
+.fomo-hero,
+.fomo-section,
+.fomo-survey-cta,
+.fomo-hero *,
+.fomo-section *,
+.fomo-survey-cta * {
+    box-sizing: border-box;
+}
+
+.fomo-hero {
+    width: min(100%, var(--fomo-content-max));
+    margin: 0 auto;
+    padding: clamp(2.5rem, 5.5vh, 4.75rem) 0 clamp(4rem, 8vh, 7rem);
+    text-align: center;
+    min-height: calc(100vh - var(--fomo-nav-height) - 8px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.fomo-hero-badge {
+    display: inline-block;
+    background: #EAF2FF;
+    color: var(--accent-dark);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+}
+.fomo-hero-title {
+    font-size: clamp(3rem, 3.2vw + 1.8rem, 5.25rem);
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.5px;
+    color: #191F28;
+    margin: 0 0 1.75rem 0;
+}
+.fomo-hero-title-accent { color: var(--accent); }
+.fomo-hero-desc {
+    font-size: clamp(1.08rem, 0.35vw + 1rem, 1.32rem);
+    color: #4E5968;
+    line-height: 1.68;
+    max-width: 640px;
+    margin: 0 auto;
+}
+.fomo-hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: clamp(2rem, 5vw, 5rem);
+    flex-wrap: wrap;
+    margin-top: 3.25rem;
+}
+.fomo-hero-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+.fomo-hero-stat-label {
+    font-size: 0.85rem;
+    color: #8B95A1;
+    margin-top: 2px;
+}
+
+/* ------------------------------------------------------------
+   섹션 공통 (제목/라벨) — 넓은 셸 안에서도 글줄은 읽기 좋게 좁게 유지
+   ------------------------------------------------------------ */
+/* flex 대신 일반 block 레이아웃을 쓴다. block 요소는 기본이 부모 폭 100%라서
+   title/label/grid를 폭 100%로 만들기 위한 별도 규칙이 필요 없고, text-align:center가
+   그대로 적용돼 flex align-items 관련 정렬 어긋남 걱정이 없다. */
+.fomo-section {
+    width: min(100%, var(--fomo-content-max));
+    margin: clamp(5.25rem, 7vw, 8rem) auto;
+    padding: 0;
+    text-align: center;
+}
+.fomo-section-alt {
+    background: #F7F9FC;
+    border-radius: 32px;
+    padding: clamp(3.5rem, 5vw, 5.5rem) clamp(2rem, 4vw, 4.5rem);
+}
+.fomo-section-label {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin: 0 0 0.6rem 0;
+}
+.fomo-section-title {
+    font-size: clamp(1.9rem, 1vw + 1.45rem, 2.8rem);
+    font-weight: 800;
+    color: #191F28;
+    line-height: 1.34;
+    margin: 0 0 3.25rem 0;
+}
+
+/* 카드 공통: hover, shadow, transition + 소속 섹션 안에서 살짝 순차 등장 */
+.fomo-problem-card,
+.fomo-step-card,
+.fomo-feature-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: fomo-fade-up 0.7s ease-out forwards;
+}
+.fomo-problem-card:hover,
+.fomo-step-card:hover,
+.fomo-feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(17, 24, 39, 0.08);
+}
+
+/* "이런 분들을 위해 만들었어요" 카드 (2x2) */
+.fomo-problem-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1.25rem, 2vw, 2rem);
+    text-align: left;
+}
+.fomo-problem-card {
+    background: #F7F9FC;
+    border-radius: 24px;
+    padding: clamp(2rem, 2.6vw, 3rem);
+    min-height: 210px;
+}
+.fomo-problem-grid .fomo-problem-card:nth-child(1) { animation-delay: 0.15s; }
+.fomo-problem-grid .fomo-problem-card:nth-child(2) { animation-delay: 0.22s; }
+.fomo-problem-grid .fomo-problem-card:nth-child(3) { animation-delay: 0.29s; }
+.fomo-problem-grid .fomo-problem-card:nth-child(4) { animation-delay: 0.36s; }
+.fomo-problem-icon { font-size: 1.6rem; }
+.fomo-problem-title {
+    font-weight: 700;
+    font-size: 1.16rem;
+    color: #191F28;
+    margin: 0.6rem 0 0.4rem 0;
+}
+.fomo-problem-desc {
+    font-size: 1rem;
+    color: #6B7684;
+    line-height: 1.65;
+}
+
+/* "딱 3단계면 끝이에요" 카드 (3열) */
+.fomo-steps-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.25rem, 2vw, 2rem);
+    text-align: left;
+}
+.fomo-step-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: clamp(2.25rem, 2.8vw, 3.25rem);
+    min-height: 280px;
+    box-shadow: 0 8px 28px rgba(25, 31, 40, 0.06);
+}
+.fomo-steps-grid .fomo-step-card:nth-child(1) { animation-delay: 0.3s; }
+.fomo-steps-grid .fomo-step-card:nth-child(2) { animation-delay: 0.38s; }
+.fomo-steps-grid .fomo-step-card:nth-child(3) { animation-delay: 0.46s; }
+.fomo-step-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+}
+.fomo-step-title {
+    font-weight: 700;
+    font-size: 1.18rem;
+    color: #191F28;
+    margin-bottom: 0.5rem;
+}
+.fomo-step-desc {
+    font-size: 1rem;
+    color: #6B7684;
+    line-height: 1.65;
+}
+
+/* "단순 추천이 아니에요" 카드 (2x2, 테두리형) */
+.fomo-feature-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1.25rem, 2vw, 2rem);
+    text-align: left;
+}
+.fomo-feature-card {
+    background: #ffffff;
+    border: 1px solid #E5E8EB;
+    border-radius: 24px;
+    padding: clamp(2rem, 2.6vw, 3rem);
+    min-height: 210px;
+}
+.fomo-feature-grid .fomo-feature-card:nth-child(1) { animation-delay: 0.45s; }
+.fomo-feature-grid .fomo-feature-card:nth-child(2) { animation-delay: 0.52s; }
+.fomo-feature-grid .fomo-feature-card:nth-child(3) { animation-delay: 0.59s; }
+.fomo-feature-grid .fomo-feature-card:nth-child(4) { animation-delay: 0.66s; }
+.fomo-feature-icon { font-size: 1.4rem; }
+.fomo-feature-title {
+    font-weight: 700;
+    font-size: 1.16rem;
+    color: #191F28;
+    margin: 0.6rem 0 0.4rem 0;
+}
+.fomo-feature-desc {
+    font-size: 1rem;
+    color: #6B7684;
+    line-height: 1.65;
+}
+
+.fomo-survey-cta {
+    width: min(100%, 760px);
+    margin: clamp(5rem, 8vw, 8rem) auto 1.25rem;
+    text-align: center;
+}
+.fomo-survey-cta-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+.fomo-survey-cta-title {
+    color: #0F172A;
+    font-size: clamp(2rem, 1.8vw + 1.4rem, 3rem);
+    font-weight: 800;
+    line-height: 1.22;
+    margin: 0;
+}
+.fomo-survey-cta-desc {
+    color: #8B95A1;
+    font-size: clamp(1rem, 0.45vw + 0.9rem, 1.18rem);
+    line-height: 1.6;
+    margin: 1.5rem 0 0;
+}
+
+/* ------------------------------------------------------------
+   Home 화면 반응형 (1280 / 1440 / 1600 / 1920 + 모바일)
+   ------------------------------------------------------------ */
+@media (min-width: 1440px) {
+    .fomo-section,
+    .fomo-hero { width: min(100%, 1440px); }
+}
+@media (min-width: 1920px) {
+    .fomo-section,
+    .fomo-hero { width: min(100%, 1520px); }
+}
+
+@media (max-width: 768px) {
+    .fomo-hero { min-height: calc(100vh - var(--fomo-nav-height) - 8px); padding: 3.25rem 0; }
+    .fomo-hero-desc { max-width: 100%; }
+    .fomo-section { margin: 3.5rem auto; }
+    .fomo-section-alt { padding: 2.25rem 1.25rem; }
+    .fomo-survey-cta { margin: 3.75rem auto 1rem; }
+    .fomo-problem-grid,
+    .fomo-steps-grid,
+    .fomo-feature-grid {
+        grid-template-columns: 1fr;
+    }
+    .fomo-hero-stats { gap: 1.5rem; }
+}
