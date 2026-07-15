@@ -152,36 +152,36 @@ STRATEGY_TIPS = {
 # 고정 목록을 그대로 보여준다. 실제 거래량은 pykrx로 조회해 확인한 값 기준(2025-07 상순).
 ETF_RECOMMENDATIONS = {
     "안정형": [
-        {"종목명": "SOL 미국배당다우존스", "종목코드": "446720", "설명": "미국 배당성장주 지수(다우존스 US Dividend 100) 추종"},
-        {"종목명": "TIGER 배당성장", "종목코드": "211560", "설명": "국내 배당성장주 지수 추종"},
-        {"종목명": "KODEX 종합채권(AA-이상)액티브", "종목코드": "273130", "설명": "국채·우량회사채 혼합, 액티브 운용"},
-        {"종목명": "KODEX 국고채3년", "종목코드": "114260", "설명": "중단기 국고채 추종, 채권형 중 변동성이 낮은 편"},
-        {"종목명": "KODEX 배당가치", "종목코드": "325020", "설명": "배당·가치주 혼합 지수 추종"},
+        {"종목명": "SOL 미국배당다우존스", "종목코드": "446720", "설명": "다우존스 US Dividend 100 지수를 추종하는, 미국 배당성장주 ETF에요.", "구성종목": "코카콜라, 셰브런, IBM 등 미국의 대표적인 배당주들"},
+        {"종목명": "TIGER 배당성장", "종목코드": "211560", "설명": "국내 배당성장주 지수를 추종하는 ETF에요.", "구성종목": "KT&G, 삼성전자, 현대차 등 꾸준히 배당을 늘려온 국내 대표 기업들"},
+        {"종목명": "KODEX 종합채권(AA-이상)액티브", "종목코드": "273130", "설명": "국채와 AA등급 이상 우량 회사채를 섞어 담는 채권형 ETF에요.", "구성종목": "개별 주식이 아니라 국고채·우량회사채 위주"},
+        {"종목명": "KODEX 국고채3년", "종목코드": "114260", "설명": "만기 3년 안팎의 국고채에 투자하는 ETF예요, 채권형 중에서도 변동성이 낮은 편이에요.", "구성종목": "국가가 발행하는 국고채 위주"},
+        {"종목명": "KODEX 배당가치", "종목코드": "325020", "설명": "배당과 가치주 성격을 함께 담은 지수를 추종하는 ETF에요.", "구성종목": "배당수익률이 높으면서 저평가된 국내 대형주들"},
     ],
     "중립형": [
-        {"종목명": "KODEX 200", "종목코드": "069500", "설명": "코스피200 추종, 국내 최대 규모 ETF"},
-        {"종목명": "KODEX 200미국채혼합50", "종목코드": "284430", "설명": "코스피200 50% + 미국채 50% 혼합, 균형 잡힌 리스크"},
+        {"종목명": "KODEX 200", "종목코드": "069500", "설명": "코스피200 지수를 그대로 추종하는, 국내에서 제일 규모가 큰 ETF에요.", "구성종목": "삼성전자, SK하이닉스 등 코스피 시가총액 상위 200개 대형주"},
+        {"종목명": "KODEX 200미국채혼합50", "종목코드": "284430", "설명": "코스피200에 50%, 미국 국채에 50%를 나눠 담아서 리스크를 낮춘 혼합형 ETF에요.", "구성종목": "코스피200 대형주 절반 + 미국 국채 절반"},
     ],
 }
 
 # 공격형 전용: 사용자가 2페이지에서 고른 관심 섹터(업종명)에 매칭되는 테마 ETF.
 # 매칭되는 섹터가 없거나 섹터를 아예 안 골랐으면 ETF_AGGRESSIVE_FALLBACK을 대신 보여준다.
 ETF_SECTOR_MAP = {
-    "증권": {"종목명": "KODEX 증권", "종목코드": "102970", "설명": "국내 증권업종 지수 추종"},
-    "은행": {"종목명": "KODEX 은행", "종목코드": "091170", "설명": "국내 은행업종 지수 추종"},
-    "IT 서비스": {"종목명": "TIGER 인터넷TOP10", "종목코드": "365000", "설명": "국내 인터넷 대표기업 10종목 추종"},
-    "전기·전자": {"종목명": "KODEX 반도체", "종목코드": "091160", "설명": "국내 반도체 업종 지수 추종"},
-    "화학": {"종목명": "TIGER 2차전지테마", "종목코드": "305540", "설명": "2차전지 밸류체인 테마 추종"},
-    "운송장비·부품": {"종목명": "KODEX 자동차", "종목코드": "091180", "설명": "국내 자동차 업종 지수 추종"},
-    "제약": {"종목명": "TIGER 헬스케어", "종목코드": "143860", "설명": "국내 헬스케어 업종 지수 추종"},
-    "금속": {"종목명": "KODEX 철강", "종목코드": "117680", "설명": "국내 철강 업종 지수 추종"},
-    "음식료·담배": {"종목명": "KODEX 필수소비재", "종목코드": "266410", "설명": "국내 필수소비재 업종 지수 추종"},
-    "유통": {"종목명": "KODEX 경기소비재", "종목코드": "266390", "설명": "국내 경기소비재 업종 지수 추종"},
+    "증권": {"종목명": "KODEX 증권", "종목코드": "102970", "설명": "국내 증권업종 지수를 추종하는 ETF에요.", "구성종목": "미래에셋증권, 삼성증권, NH투자증권, 키움증권 등 국내 주요 증권사들"},
+    "은행": {"종목명": "KODEX 은행", "종목코드": "091170", "설명": "국내 은행업종 지수를 추종하는 ETF에요.", "구성종목": "KB금융, 신한지주, 하나금융지주, 우리금융지주 등 국내 주요 금융지주사들"},
+    "IT 서비스": {"종목명": "TIGER 인터넷TOP10", "종목코드": "365000", "설명": "국내 인터넷 대표기업 10종목을 추종하는 ETF에요.", "구성종목": "네이버, 카카오 등 국내 대표 인터넷 기업들"},
+    "전기·전자": {"종목명": "KODEX 반도체", "종목코드": "091160", "설명": "국내 반도체 업종 지수를 추종하는 ETF에요.", "구성종목": "삼성전자, SK하이닉스 등 국내 대표 반도체 기업들"},
+    "화학": {"종목명": "TIGER 2차전지테마", "종목코드": "305540", "설명": "2차전지 관련 기업들을 모아 담은 테마형 ETF에요.", "구성종목": "LG에너지솔루션, 삼성SDI, 에코프로 등 2차전지 밸류체인 기업들"},
+    "운송장비·부품": {"종목명": "KODEX 자동차", "종목코드": "091180", "설명": "국내 자동차 업종 지수를 추종하는 ETF에요.", "구성종목": "현대차, 기아, 현대모비스 등 국내 대표 자동차 기업들"},
+    "제약": {"종목명": "TIGER 헬스케어", "종목코드": "143860", "설명": "국내 헬스케어 업종 지수를 추종하는 ETF에요.", "구성종목": "삼성바이오로직스, 셀트리온 등 국내 대표 제약·바이오 기업들"},
+    "금속": {"종목명": "KODEX 철강", "종목코드": "117680", "설명": "국내 철강 업종 지수를 추종하는 ETF에요.", "구성종목": "POSCO홀딩스, 현대제철 등 국내 대표 철강 기업들"},
+    "음식료·담배": {"종목명": "KODEX 필수소비재", "종목코드": "266410", "설명": "국내 필수소비재 업종 지수를 추종하는 ETF에요.", "구성종목": "KT&G, 오리온, CJ제일제당 등 국내 대표 음식료·생활필수품 기업들"},
+    "유통": {"종목명": "KODEX 경기소비재", "종목코드": "266390", "설명": "국내 경기소비재 업종 지수를 추종하는 ETF에요.", "구성종목": "현대차, 기아 등 경기 흐름에 민감한 소비재 관련 기업들"},
 }
 
 ETF_AGGRESSIVE_FALLBACK = [
-    {"종목명": "KODEX 미국S&P500", "종목코드": "379800", "설명": "미국 S&P500 지수 추종"},
-    {"종목명": "TIGER 미국나스닥100", "종목코드": "133690", "설명": "미국 나스닥100 지수 추종"},
+    {"종목명": "KODEX 미국S&P500", "종목코드": "379800", "설명": "미국 S&P500 지수를 추종하는 ETF에요.", "구성종목": "애플, 마이크로소프트, 엔비디아 등 미국 대표 대형주들"},
+    {"종목명": "TIGER 미국나스닥100", "종목코드": "133690", "설명": "미국 나스닥100 지수를 추종하는 ETF에요.", "구성종목": "애플, 마이크로소프트, 엔비디아 등 미국 대표 기술주들"},
 ]
 
 
@@ -875,6 +875,17 @@ def render_recommend_page():
                     display_df[col] = display_df[col].map(lambda x: f"{x:,.0f}")
                 st.dataframe(display_df, hide_index=True, use_container_width=True)
 
+        etf_list = get_etf_recommendations(predicted_profile, selected_sectors)
+        if etf_list:
+            st.write("")
+            with st.container(border=True):
+                st.subheader("📦 추천 ETF")
+                st.caption("개별 종목과 별개로, 분산투자용으로 참고할 만한 ETF예요.")
+                for etf in etf_list:
+                    st.markdown(f"- **{etf['종목명']}** ({etf['종목코드']}) - {etf['설명']}")
+                    st.caption(f"　주요 구성종목: {etf['구성종목']}")
+                st.caption("※ 구성종목은 대표 예시이며, 정확한 비중은 운용사 홈페이지에서 확인하세요.")
+
         if not allocated.empty:
             insights = generate_ai_insights(predicted_profile, allocated, score_col, reason_col)
             if insights:
@@ -899,32 +910,25 @@ def render_recommend_page():
             st.write("")
             with st.container(border=True):
                 st.subheader("📈 추천 점수 그래프")
-                st.caption("종목별로 4개 점수(수익성/안정성/가치/배당)를 색 진하기로 비교해서 보여줍니다.")
+                st.caption("종목별로 4개 점수(수익성/안정성/가치/배당)를 가로 막대로 쌓아서 보여줍니다.")
                 sub_score_cols = ["수익성점수", "안정성점수", "가치점수", "배당점수"]
                 stock_order = allocated.sort_values(score_col, ascending=False)["종목명"].tolist()
-                heat_df = allocated[["종목명"] + sub_score_cols].melt(
+                bar_df = allocated[["종목명"] + sub_score_cols].melt(
                     id_vars="종목명", var_name="구성 요소", value_name="점수"
                 )
-                base = alt.Chart(heat_df).encode(
-                    x=alt.X(
-                        "구성 요소:N",
-                        sort=sub_score_cols,
-                        title=None,
-                        axis=alt.Axis(labelAngle=0, labelLimit=200),
-                    ),
-                    y=alt.Y("종목명:N", sort=stock_order, title=None),
+                chart = (
+                    alt.Chart(bar_df)
+                    .mark_bar()
+                    .encode(
+                        y=alt.Y("종목명:N", sort=stock_order, title=None),
+                        x=alt.X("점수:Q", stack="zero", title="점수"),
+                        color=alt.Color(
+                            "구성 요소:N", sort=sub_score_cols, title="구성 요소"
+                        ),
+                        tooltip=["종목명", "구성 요소", "점수"],
+                    )
+                    .properties(height=max(220, 34 * len(stock_order) + 40))
                 )
-                heatmap = base.mark_rect().encode(
-                    color=alt.Color(
-                        "점수:Q", scale=alt.Scale(scheme="blues", domain=[0, 100]), title="점수"
-                    ),
-                    tooltip=["종목명", "구성 요소", "점수"],
-                )
-                text = base.mark_text().encode(
-                    text=alt.Text("점수:Q", format=".0f"),
-                    color=alt.condition("datum['점수'] > 60", alt.value("white"), alt.value("black")),
-                )
-                chart = (heatmap + text).properties(height=max(220, 34 * len(stock_order) + 40))
                 st.altair_chart(chart, use_container_width=True)
 
             st.write("")
@@ -936,15 +940,6 @@ def render_recommend_page():
                     reason_text = ai_per_stock.get(row["종목코드"], row[reason_col])
                     with st.expander(f"{row['종목명']} ({row['종목코드']}) - {reason_text}"):
                         render_investment_metrics_card(row)
-
-    etf_list = get_etf_recommendations(predicted_profile, selected_sectors)
-    if etf_list:
-        st.write("")
-        with st.container(border=True):
-            st.subheader("📦 추천 ETF")
-            st.caption("개별 종목과 별개로, 분산투자용으로 참고할 만한 ETF예요.")
-            for etf in etf_list:
-                st.markdown(f"- **{etf['종목명']}** ({etf['종목코드']}) - {etf['설명']}")
 
     col1, col2 = st.columns([1, 1])
     with col1:
