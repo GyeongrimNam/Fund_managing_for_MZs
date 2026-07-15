@@ -86,18 +86,19 @@ def compute_metrics_for_row(price_history_json):
 
 
 # ------------------------------------------------------------
-# 2. Min-Max 정규화 (0~100). higher_is_better=False면 방향을 뒤집는다.
+# 2. 퍼센타일 랭크 정규화 (0~100). higher_is_better=False면 방향을 뒤집는다.
+# min-max는 극단치(예: 1년 수익률 900%대 종목) 하나 때문에 나머지 종목들의 점수가
+# 실제 순위와 무관하게 다같이 낮게 눌리는 문제가 있어서, "전체 종목 중 몇 번째로
+# 좋은가"라는 상대 순위(percentile) 기준으로 바꿨다. 극단치의 영향을 크게 줄여준다.
 # ------------------------------------------------------------
-def minmax_score(series, higher_is_better=True):
+def percentile_score(series, higher_is_better=True):
     s = series.astype(float)
     valid = s.dropna()
-    if valid.empty or valid.max() == valid.min():
+    if valid.empty or valid.nunique() <= 1:
         return pd.Series(50.0, index=s.index)  # 변별력이 없으면 중간값 부여
 
-    scaled = (s - valid.min()) / (valid.max() - valid.min()) * 100
-    if not higher_is_better:
-        scaled = 100 - scaled
-    return scaled.clip(0, 100)
+    pct_rank = s.rank(pct=True, ascending=higher_is_better)
+    return (pct_rank * 100).clip(0, 100)
 
 
 # ------------------------------------------------------------
@@ -117,20 +118,20 @@ def compute_scores(df):
         + df["수익률6개월"].fillna(0) * 0.3
         + df["수익률3개월"].fillna(0) * 0.2
     )
-    profitability = minmax_score(composite_return, higher_is_better=True)
+    profitability = percentile_score(composite_return, higher_is_better=True)
 
     # 안정성 점수: 변동성과 최대낙폭이 낮을수록 높은 점수, 두 지표를 평균
-    vol_score = minmax_score(df["연환산변동성"], higher_is_better=False)
-    mdd_score = minmax_score(df["최대낙폭"], higher_is_better=False)
+    vol_score = percentile_score(df["연환산변동성"], higher_is_better=False)
+    mdd_score = percentile_score(df["최대낙폭"], higher_is_better=False)
     stability = (vol_score.fillna(0) + mdd_score.fillna(0)) / 2
 
     # 가치 점수: PER, PBR이 낮을수록 높은 점수, 두 지표를 평균 (0 이하 값은 최저점 0)
-    per_score = minmax_score(per, higher_is_better=False).fillna(0)
-    pbr_score = minmax_score(pbr, higher_is_better=False).fillna(0)
+    per_score = percentile_score(per, higher_is_better=False).fillna(0)
+    pbr_score = percentile_score(pbr, higher_is_better=False).fillna(0)
     value = (per_score + pbr_score) / 2
 
     # 배당 점수: 배당수익률이 높을수록 높은 점수
-    dividend = minmax_score(div_yield, higher_is_better=True)
+    dividend = percentile_score(div_yield, higher_is_better=True)
 
     df["수익성점수"] = profitability.round(1)
     df["안정성점수"] = stability.round(1)
@@ -164,9 +165,9 @@ def _describe_profitability(row):
     return f"최근 1년 수익률은 {r1y:.0f}%지만, 다른 지표들이 이를 상쇄할 만큼 우수해요."
 
 
-# 변동성/PER/PBR은 min-max 정규화라서 "데이터셋 안 최악의 종목보다는 낫다"는 이유만으로
-# 점수가 높게 나올 수 있다 (예: PER 556배짜리 극단치가 있으면 PER 150배도 상대적으로
-# 고득점). 그래서 절대적으로도 괜찮은 수준인지 별도 기준으로 한 번 더 확인한 뒤 문장을
+# 변동성/PER/PBR은 퍼센타일 랭크라서 "데이터셋 안에서 몇 번째로 좋은가"만 반영한다
+# (예: 전체 종목의 PER이 대체로 높으면 PER 150배도 상위권 점수를 받을 수 있다).
+# 그래서 절대적으로도 괜찮은 수준인지 별도 기준으로 한 번 더 확인한 뒤 문장을
 # 다르게 쓴다 - 그래야 "PER 150배인데 저평가"라는 식의 어색한 문장이 안 나온다.
 STABLE_VOL_THRESHOLD = 30   # 연환산 변동성 30% 이하면 절대적으로도 안정적이라고 봄
 STABLE_MDD_THRESHOLD = 25   # 최대낙폭 25% 이하면 절대적으로도 안정적이라고 봄

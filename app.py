@@ -9,6 +9,7 @@ import math
 import os
 import re
 
+import altair as alt
 import joblib
 import pandas as pd
 import streamlit as st
@@ -145,6 +146,53 @@ STRATEGY_TIPS = {
     ],
 }
 
+# 페이지 4(종목 추천받기)에서 성향별로 함께 보여줄 ETF 추천 목록.
+# 개별 종목과 달리 ETF는 PER/PBR 같은 4축 점수가 잘 맞지 않아서(가치점수 계산이 어색해짐),
+# 점수로 경쟁시켜 순위를 매기지 않고 카테고리(성향) 매칭 + 거래량 순으로 큐레이션한
+# 고정 목록을 그대로 보여준다. 실제 거래량은 pykrx로 조회해 확인한 값 기준(2025-07 상순).
+ETF_RECOMMENDATIONS = {
+    "안정형": [
+        {"종목명": "SOL 미국배당다우존스", "종목코드": "446720", "설명": "미국 배당성장주 지수(다우존스 US Dividend 100) 추종"},
+        {"종목명": "TIGER 배당성장", "종목코드": "211560", "설명": "국내 배당성장주 지수 추종"},
+        {"종목명": "KODEX 종합채권(AA-이상)액티브", "종목코드": "273130", "설명": "국채·우량회사채 혼합, 액티브 운용"},
+        {"종목명": "KODEX 국고채3년", "종목코드": "114260", "설명": "중단기 국고채 추종, 채권형 중 변동성이 낮은 편"},
+        {"종목명": "KODEX 배당가치", "종목코드": "325020", "설명": "배당·가치주 혼합 지수 추종"},
+    ],
+    "중립형": [
+        {"종목명": "KODEX 200", "종목코드": "069500", "설명": "코스피200 추종, 국내 최대 규모 ETF"},
+        {"종목명": "KODEX 200미국채혼합50", "종목코드": "284430", "설명": "코스피200 50% + 미국채 50% 혼합, 균형 잡힌 리스크"},
+    ],
+}
+
+# 공격형 전용: 사용자가 2페이지에서 고른 관심 섹터(업종명)에 매칭되는 테마 ETF.
+# 매칭되는 섹터가 없거나 섹터를 아예 안 골랐으면 ETF_AGGRESSIVE_FALLBACK을 대신 보여준다.
+ETF_SECTOR_MAP = {
+    "증권": {"종목명": "KODEX 증권", "종목코드": "102970", "설명": "국내 증권업종 지수 추종"},
+    "은행": {"종목명": "KODEX 은행", "종목코드": "091170", "설명": "국내 은행업종 지수 추종"},
+    "IT 서비스": {"종목명": "TIGER 인터넷TOP10", "종목코드": "365000", "설명": "국내 인터넷 대표기업 10종목 추종"},
+    "전기·전자": {"종목명": "KODEX 반도체", "종목코드": "091160", "설명": "국내 반도체 업종 지수 추종"},
+    "화학": {"종목명": "TIGER 2차전지테마", "종목코드": "305540", "설명": "2차전지 밸류체인 테마 추종"},
+    "운송장비·부품": {"종목명": "KODEX 자동차", "종목코드": "091180", "설명": "국내 자동차 업종 지수 추종"},
+    "제약": {"종목명": "TIGER 헬스케어", "종목코드": "143860", "설명": "국내 헬스케어 업종 지수 추종"},
+    "금속": {"종목명": "KODEX 철강", "종목코드": "117680", "설명": "국내 철강 업종 지수 추종"},
+    "음식료·담배": {"종목명": "KODEX 필수소비재", "종목코드": "266410", "설명": "국내 필수소비재 업종 지수 추종"},
+    "유통": {"종목명": "KODEX 경기소비재", "종목코드": "266390", "설명": "국내 경기소비재 업종 지수 추종"},
+}
+
+ETF_AGGRESSIVE_FALLBACK = [
+    {"종목명": "KODEX 미국S&P500", "종목코드": "379800", "설명": "미국 S&P500 지수 추종"},
+    {"종목명": "TIGER 미국나스닥100", "종목코드": "133690", "설명": "미국 나스닥100 지수 추종"},
+]
+
+
+def get_etf_recommendations(predicted_profile, selected_sectors):
+    """성향(및 공격형의 경우 관심 섹터)에 맞는 ETF 추천 목록을 반환한다."""
+    if predicted_profile == "공격형":
+        matched = [ETF_SECTOR_MAP[s] for s in selected_sectors if s in ETF_SECTOR_MAP]
+        return matched if matched else ETF_AGGRESSIVE_FALLBACK
+    return ETF_RECOMMENDATIONS.get(predicted_profile, [])
+
+
 # 투자 초보자를 위한 용어 설명 (지표 옆 ? 아이콘에 마우스를 올리면 표시됨)
 TERM_HELP = {
     "PER": "주가를 주당순이익으로 나눈 값으로 PER이 낮을수록 기업이 내는 이익에 비해 주가가 저평가 되어 있다는 의미에요.",
@@ -188,7 +236,9 @@ def go_to(page_name):
 
 SURVEY_STATE_KEYS = (
     "user_name",
+    "user_name_widget",
     "budget_text",
+    "budget_text_widget",
     "sector_selection",
     "survey_step",
     "survey_wip",
@@ -255,9 +305,17 @@ def render_navbar():
 # 공통: 투자 참고용 경고 문구
 # ------------------------------------------------------------
 def render_disclaimer():
-    st.warning(
-        "⚠️ 이 서비스는 투자 자문이 아닌 참고용 데모입니다. 실제 투자 판단과 책임은 본인에게 있습니다.",
-        icon="⚠️",
+    st.markdown(
+        """
+        <div style="margin-top:48px; padding-top:16px; border-top:1px solid rgba(128,128,128,0.25);
+                    text-align:center; font-size:0.8rem; color:var(--text-secondary, #888); line-height:1.6;">
+            본 서비스는 「자본시장과 금융투자업에 관한 법률」상 투자자문업으로 등록되지 않은
+            참고용 서비스이며, 제공되는 정보는 투자 판단을 돕기 위한 참고 자료일 뿐
+            특정 종목에 대한 투자 권유가 아닙니다.<br>
+            투자에 따른 손익 등 모든 책임은 이용자 본인에게 귀속됩니다.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 
@@ -432,7 +490,6 @@ def render_intro_page():
             정보를 입력하면 투자 성향 테스트 결과와 종목을 추천해드려요.
             """
         )
-    render_disclaimer()
     st.write("")
     if st.button("📝 설문조사 하러가기", type="primary"):
         go_to("survey")
@@ -511,136 +568,148 @@ SURVEY_QUESTIONS = [
 
 
 def _format_budget_input():
-    digits = re.sub(r"[^\d]", "", st.session_state.get("budget_text", ""))
-    st.session_state.budget_text = f"{int(digits):,}" if digits else ""
+    digits = re.sub(r"[^\d]", "", st.session_state.get("budget_text_widget", ""))
+    formatted = f"{int(digits):,}" if digits else ""
+    st.session_state.budget_text_widget = formatted
+    st.session_state.budget_text = formatted
+
+
+# 2페이지 전체를 "페이지 안의 페이지"처럼 한 단계씩 진행한다: 이름 -> 예산 -> 문항 5개 -> 관심 섹터
+NAME_STEP = 0
+BUDGET_STEP = 1
+QUESTION_STEPS = list(range(2, 2 + len(SURVEY_QUESTIONS)))
+SECTOR_STEP = 2 + len(SURVEY_QUESTIONS)
+TOTAL_SURVEY_STEPS = SECTOR_STEP + 1
 
 
 def render_survey_page():
-    st.title("📝 투자 성향 설문")
-
-    with st.container(border=True):
-        st.subheader("🙋 이름")
-        user_name = st.text_input("이름 (또는 별명)", key="user_name", placeholder="예: 홍길동")
-
-    st.write("")
-    with st.container(border=True):
-        st.subheader("💰 투자 예산")
-        if "budget_text" not in st.session_state:
-            st.session_state.budget_text = f"{1_000_000:,}"
-
-        st.text_input(
-            "총 투자 예산 (원)", key="budget_text", on_change=_format_budget_input,
-        )
-        budget_digits = re.sub(r"[^\d]", "", st.session_state.budget_text)
-        budget = int(budget_digits) if budget_digits else 0
-        budget = max(MIN_BUDGET, min(MAX_BUDGET, budget))
-        st.caption(f"입력된 예산: {budget:,}원 (최소 {MIN_BUDGET:,}원 ~ 최대 {MAX_BUDGET:,}원)")
-
-    total_q = len(SURVEY_QUESTIONS)
     if "survey_step" not in st.session_state:
         st.session_state.survey_step = 0
-    step = min(st.session_state.survey_step, total_q - 1)
+    step = min(st.session_state.survey_step, TOTAL_SURVEY_STEPS - 1)
 
-    # 페이지를 하나씩 넘기다 보면 현재 문항이 아닌 라디오는 렌더링되지 않는 구간이 생기는데,
-    # 그 사이에 Streamlit이 위젯 key의 세션 상태를 되살리지 못해 답이 사라지는 문제가 있었다.
-    # 그래서 답변을 위젯 key가 아니라 별도의 survey_wip 딕셔너리에 직접 보관하고,
-    # 라디오의 index도 그 딕셔너리 값을 기준으로 매번 명시적으로 계산해서 넣어준다.
+    # 페이지를 하나씩 넘기다 보면 현재 스텝이 아닌 위젯은 렌더링되지 않는 구간이 생기는데,
+    # 그 사이에 Streamlit이 위젯 key의 세션 상태를 되살리지 못해 값이 사라지는 문제가 있었다.
+    # 그래서 답변은 위젯 key가 아니라 별도의 딕셔너리(survey_wip)에 직접 보관하고,
+    # 위젯의 index/value도 그 딕셔너리 값을 기준으로 매번 명시적으로 계산해서 넣어준다.
     if "survey_wip" not in st.session_state:
         st.session_state.survey_wip = {sq["feature"]: None for sq in SURVEY_QUESTIONS}
+    if "sector_selection" not in st.session_state:
+        st.session_state.sector_selection = set()
+    if "budget_text" not in st.session_state:
+        st.session_state.budget_text = f"{1_000_000:,}"
+    if "user_name" not in st.session_state:
+        st.session_state.user_name = ""
 
-    st.write("")
+    budget_digits = re.sub(r"[^\d]", "", st.session_state.budget_text)
+    budget = int(budget_digits) if budget_digits else 0
+    budget = max(MIN_BUDGET, min(MAX_BUDGET, budget))
+
+    can_advance = True
+    error_message = None
+
     with st.container(border=True):
-        st.subheader("📋 몇 가지만 편하게 답해주세요")
-        st.progress((step + 1) / total_q)
-        st.caption(f"질문 {step + 1} / {total_q}")
+        if step == NAME_STEP:
+            # 이름 위젯(key="user_name_widget")은 이 스텝에서만 렌더링되는데, Streamlit은
+            # 어떤 스텝에서도 렌더링되지 않은 위젯의 세션 상태를 다음 렌더링에서 지워버린다.
+            # 그래서 실제 값은 스텝과 무관한 별도 키(user_name)에 보관하고, 위젯은 그 값을
+            # 초기값으로 보여준 뒤 매번 다시 동기화한다.
+            st.subheader("🙋 이름")
+            user_name = st.text_input(
+                "이름 (또는 별명)",
+                value=st.session_state.user_name,
+                key="user_name_widget",
+                placeholder="예: 홍길동",
+            )
+            st.session_state.user_name = user_name
+            can_advance = bool(user_name.strip())
+            error_message = "이름을 입력해주세요."
 
-        q = SURVEY_QUESTIONS[step]
-        labels = [label for label, _ in q["options"]]
-        value_map = dict(q["options"])
-        label_by_value = {v: k for k, v in q["options"]}
+        elif step == BUDGET_STEP:
+            st.subheader("💰 투자 예산")
+            st.text_input(
+                "총 투자 예산 (원)",
+                value=st.session_state.budget_text,
+                key="budget_text_widget",
+                on_change=_format_budget_input,
+            )
+            st.caption(f"입력된 예산: {budget:,}원 (최소 {MIN_BUDGET:,}원 ~ 최대 {MAX_BUDGET:,}원)")
 
-        current_value = st.session_state.survey_wip.get(q["feature"])
-        current_label = label_by_value.get(current_value)
-        default_index = labels.index(current_label) if current_label in labels else None
+        elif step in QUESTION_STEPS:
+            q_idx = step - QUESTION_STEPS[0]
+            q = SURVEY_QUESTIONS[q_idx]
+            st.subheader("📋 몇 가지만 편하게 답해주세요")
+            st.caption(f"질문 {q_idx + 1} / {len(SURVEY_QUESTIONS)}")
 
-        selected_label = st.radio(q["question"], labels, index=default_index, key=q["key"])
-        st.session_state.survey_wip[q["feature"]] = value_map.get(selected_label)
+            labels = [label for label, _ in q["options"]]
+            value_map = dict(q["options"])
+            label_by_value = {v: k for k, v in q["options"]}
 
-        nav1, nav2 = st.columns([1, 1])
-        with nav1:
-            if step > 0 and st.button("← 이전 질문"):
-                st.session_state.survey_step = step - 1
-                st.rerun()
-        with nav2:
-            if step < total_q - 1:
-                if st.button("다음 질문 →", type="primary"):
-                    if selected_label is None:
-                        st.error("답을 선택해주세요.")
-                    else:
-                        st.session_state.survey_step = step + 1
+            current_value = st.session_state.survey_wip.get(q["feature"])
+            current_label = label_by_value.get(current_value)
+            default_index = labels.index(current_label) if current_label in labels else None
+
+            selected_label = st.radio(q["question"], labels, index=default_index, key=q["key"])
+            st.session_state.survey_wip[q["feature"]] = value_map.get(selected_label)
+            can_advance = selected_label is not None
+            error_message = "답을 선택해주세요."
+
+        else:  # SECTOR_STEP
+            st.subheader("🏭 관심 섹터 선택")
+            st.caption("섹터 버튼을 눌러 선택/해제하세요. 하나도 선택하지 않으면 전체 종목을 대상으로 추천합니다.")
+            scored = load_scored_stocks()
+            sector_options = sorted(scored["업종명"].dropna().unique().tolist())
+
+            SECTORS_PER_ROW = 4
+            for row_start in range(0, len(sector_options), SECTORS_PER_ROW):
+                row_sectors = sector_options[row_start:row_start + SECTORS_PER_ROW]
+                cols = st.columns(SECTORS_PER_ROW)
+                for col, sector in zip(cols, row_sectors):
+                    is_selected = sector in st.session_state.sector_selection
+                    if col.button(
+                        sector,
+                        key=f"sector_btn_{sector}",
+                        type="primary" if is_selected else "secondary",
+                        use_container_width=True,
+                    ):
+                        if is_selected:
+                            st.session_state.sector_selection.discard(sector)
+                        else:
+                            st.session_state.sector_selection.add(sector)
                         st.rerun()
 
-    survey_values = dict(st.session_state.survey_wip)
-    all_answered = all(v is not None for v in survey_values.values())
-
-    if not all_answered:
-        st.write("")
-        st.info("설문을 먼저 완료해주세요.")
-        st.write("")
-        if st.button("← 처음으로"):
-            go_to("intro")
-            st.rerun()
-        return
-
-    st.write("")
-    with st.container(border=True):
-        st.subheader("🏭 관심 섹터 선택")
-        st.caption("섹터 버튼을 눌러 선택/해제하세요. 하나도 선택하지 않으면 전체 종목을 대상으로 추천합니다.")
-        scored = load_scored_stocks()
-        sector_options = sorted(scored["업종명"].dropna().unique().tolist())
-
-        if "sector_selection" not in st.session_state:
-            st.session_state.sector_selection = set()
-
-        SECTORS_PER_ROW = 4
-        for row_start in range(0, len(sector_options), SECTORS_PER_ROW):
-            row_sectors = sector_options[row_start:row_start + SECTORS_PER_ROW]
-            cols = st.columns(SECTORS_PER_ROW)
-            for col, sector in zip(cols, row_sectors):
-                is_selected = sector in st.session_state.sector_selection
-                if col.button(
-                    sector,
-                    key=f"sector_btn_{sector}",
-                    type="primary" if is_selected else "secondary",
-                    use_container_width=True,
-                ):
-                    if is_selected:
-                        st.session_state.sector_selection.discard(sector)
-                    else:
-                        st.session_state.sector_selection.add(sector)
-                    st.rerun()
-
-        selected_sectors = sorted(st.session_state.sector_selection)
-        if selected_sectors:
-            st.caption(f"선택된 섹터: {', '.join(selected_sectors)}")
-        else:
-            st.caption("선택된 섹터 없음 (전체 종목 대상)")
-
-    st.write("")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("← 처음으로"):
-            go_to("intro")
-            st.rerun()
-    with col2:
-        if st.button("🧭 내 투자성향 확인하러가기", type="primary"):
-            if not user_name.strip():
-                st.error("이름을 입력해주세요.")
+            selected_sectors = sorted(st.session_state.sector_selection)
+            if selected_sectors:
+                st.caption(f"선택된 섹터: {', '.join(selected_sectors)}")
             else:
-                # user_name은 이미 key="user_name" 위젯이 세션 상태에 저장해뒀으므로
-                # 여기서 다시 대입하면 안 된다 (위젯 인스턴스화 후 재대입 시 에러 발생).
+                st.caption("선택된 섹터 없음 (전체 종목 대상)")
+
+    st.write("")
+    st.progress((step + 1) / TOTAL_SURVEY_STEPS)
+    st.caption(f"{step + 1} / {TOTAL_SURVEY_STEPS}")
+
+    st.write("")
+    nav1, nav2 = st.columns([1, 1])
+    with nav1:
+        if step > 0:
+            if st.button("← 이전"):
+                st.session_state.survey_step = step - 1
+                st.rerun()
+        else:
+            if st.button("← 처음으로"):
+                go_to("intro")
+                st.rerun()
+    with nav2:
+        if step < TOTAL_SURVEY_STEPS - 1:
+            if st.button("다음 →", type="primary"):
+                if not can_advance:
+                    st.error(error_message)
+                else:
+                    st.session_state.survey_step = step + 1
+                    st.rerun()
+        else:
+            if st.button("🧭 내 투자성향 확인하러가기", type="primary"):
                 st.session_state.budget = budget
-                st.session_state.survey_answers = survey_values
+                st.session_state.survey_answers = dict(st.session_state.survey_wip)
                 go_to("profile")
                 st.rerun()
 
@@ -648,21 +717,44 @@ def render_survey_page():
 # ------------------------------------------------------------
 # 페이지 3: 내 투자성향 확인하기
 # ------------------------------------------------------------
-def predict_profile():
-    """survey_answers를 기반으로 투자 성향을 예측한다 (profile/recommend 페이지 공용)."""
+def _get_profile_proba():
+    """survey_answers 기반으로 성향별 확률(dict[성향, 확률])을 반환한다. 답변이 없으면 None."""
     answers = st.session_state.get("survey_answers")
     if not answers:
         return None
     model = load_model()
     X = pd.DataFrame([answers])[FEATURE_COLS]
-    return model.predict(X)[0]
+    proba = model.predict_proba(X)[0]
+    return dict(zip(model.classes_, proba))
+
+
+def predict_profile():
+    """survey_answers를 기반으로 투자 성향을 예측한다 (profile/recommend 페이지 공용)."""
+    proba = _get_profile_proba()
+    if proba is None:
+        return None
+    return max(proba, key=proba.get)
+
+
+# 게이지에서 성향별 위치 점수 (안정형=0 ~ 공격형=100)
+PROFILE_SCORE_MAP = {"안정형": 0, "중립형": 50, "공격형": 100}
+
+# 설문 문항의 feature 키 -> 근거 요약에 쓸 짧은 항목명
+FEATURE_LABELS = {
+    "손실감수수준": "손실 감수도",
+    "기대수익률": "기대 수익률",
+    "투자기간": "투자 기간",
+    "배당선호도": "배당 선호도",
+    "변동성감수수준": "변동성 감수도",
+}
 
 
 def render_profile_page():
     st.title("🧭 내 투자성향")
 
     user_name = (st.session_state.get("user_name") or "").strip()
-    predicted_profile = predict_profile()
+    proba = _get_profile_proba()
+    predicted_profile = max(proba, key=proba.get) if proba else None
     if not user_name or predicted_profile is None:
         st.error("설문 응답이 없습니다. 설문 페이지로 돌아가주세요.")
         if st.button("← 설문으로 돌아가기"):
@@ -677,6 +769,40 @@ def render_profile_page():
         st.markdown("**추천 투자전략**")
         for tip in STRATEGY_TIPS.get(predicted_profile, []):
             st.markdown(f"- {tip}")
+
+    st.write("")
+    with st.container(border=True):
+        st.markdown("**투자성향 스펙트럼**")
+        gauge_score = sum(proba.get(profile, 0) * score for profile, score in PROFILE_SCORE_MAP.items())
+        gauge_pct = max(0.0, min(100.0, gauge_score))
+        st.markdown(
+            f"""
+            <div style="position:relative; height:10px; border-radius:5px;
+                        background:linear-gradient(90deg, #8fb8ff 0%, var(--accent) 50%, #1a3d8f 100%);
+                        margin:8px 0 4px 0;">
+                <div style="position:absolute; left:{gauge_pct}%; top:50%;
+                            transform:translate(-50%, -50%);
+                            width:18px; height:18px; border-radius:50%;
+                            background:#fff; border:3px solid var(--accent-dark);
+                            box-shadow:0 0 4px rgba(0,0,0,0.4);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary, #888);">
+                <span>안정형</span><span>중립형</span><span>공격형</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    with st.container(border=True):
+        st.markdown("**이렇게 답변하셨어요**")
+        answers = st.session_state.get("survey_answers", {})
+        for q in SURVEY_QUESTIONS:
+            feature = q["feature"]
+            value = answers.get(feature)
+            label_by_value = {v: k for k, v in q["options"]}
+            answer_label = label_by_value.get(value, "-")
+            st.markdown(f"- **{FEATURE_LABELS.get(feature, feature)}**: {answer_label}")
 
     st.write("")
     col1, col2 = st.columns([1, 1])
@@ -773,8 +899,33 @@ def render_recommend_page():
             st.write("")
             with st.container(border=True):
                 st.subheader("📈 추천 점수 그래프")
-                chart_df = allocated.set_index("종목명")[score_col].rename("추천점수")
-                st.bar_chart(chart_df)
+                st.caption("종목별로 4개 점수(수익성/안정성/가치/배당)를 색 진하기로 비교해서 보여줍니다.")
+                sub_score_cols = ["수익성점수", "안정성점수", "가치점수", "배당점수"]
+                stock_order = allocated.sort_values(score_col, ascending=False)["종목명"].tolist()
+                heat_df = allocated[["종목명"] + sub_score_cols].melt(
+                    id_vars="종목명", var_name="구성 요소", value_name="점수"
+                )
+                base = alt.Chart(heat_df).encode(
+                    x=alt.X(
+                        "구성 요소:N",
+                        sort=sub_score_cols,
+                        title=None,
+                        axis=alt.Axis(labelAngle=0, labelLimit=200),
+                    ),
+                    y=alt.Y("종목명:N", sort=stock_order, title=None),
+                )
+                heatmap = base.mark_rect().encode(
+                    color=alt.Color(
+                        "점수:Q", scale=alt.Scale(scheme="blues", domain=[0, 100]), title="점수"
+                    ),
+                    tooltip=["종목명", "구성 요소", "점수"],
+                )
+                text = base.mark_text().encode(
+                    text=alt.Text("점수:Q", format=".0f"),
+                    color=alt.condition("datum['점수'] > 60", alt.value("white"), alt.value("black")),
+                )
+                chart = (heatmap + text).properties(height=max(220, 34 * len(stock_order) + 40))
+                st.altair_chart(chart, use_container_width=True)
 
             st.write("")
             with st.container(border=True):
@@ -786,8 +937,14 @@ def render_recommend_page():
                     with st.expander(f"{row['종목명']} ({row['종목코드']}) - {reason_text}"):
                         render_investment_metrics_card(row)
 
-    st.divider()
-    render_disclaimer()
+    etf_list = get_etf_recommendations(predicted_profile, selected_sectors)
+    if etf_list:
+        st.write("")
+        with st.container(border=True):
+            st.subheader("📦 추천 ETF")
+            st.caption("개별 종목과 별개로, 분산투자용으로 참고할 만한 ETF예요.")
+            for etf in etf_list:
+                st.markdown(f"- **{etf['종목명']}** ({etf['종목코드']}) - {etf['설명']}")
 
     col1, col2 = st.columns([1, 1])
     with col1:
@@ -825,6 +982,8 @@ def main():
         render_profile_page()
     elif st.session_state.page == "recommend":
         render_recommend_page()
+
+    render_disclaimer()
 
 
 main()
