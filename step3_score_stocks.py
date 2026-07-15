@@ -153,6 +153,86 @@ def compute_profile_scores(df):
     return df
 
 
+# 추천 이유를 "가치 점수 91점" 같은 추상적인 숫자가 아니라, 실제 지표값으로 풀어서
+# 설명한다 (투자 초보자가 봤을 때 바로 와닿도록).
+def _describe_profitability(row):
+    r1y = row.get("수익률1년")
+    if r1y is None or pd.isna(r1y):
+        return "최근 수익률 흐름이 좋은 종목이에요."
+    if r1y >= 0:
+        return f"최근 1년간 주가가 {r1y:.0f}% 올랐어요."
+    return f"최근 1년 수익률은 {r1y:.0f}%지만, 다른 지표들이 이를 상쇄할 만큼 우수해요."
+
+
+# 변동성/PER/PBR은 min-max 정규화라서 "데이터셋 안 최악의 종목보다는 낫다"는 이유만으로
+# 점수가 높게 나올 수 있다 (예: PER 556배짜리 극단치가 있으면 PER 150배도 상대적으로
+# 고득점). 그래서 절대적으로도 괜찮은 수준인지 별도 기준으로 한 번 더 확인한 뒤 문장을
+# 다르게 쓴다 - 그래야 "PER 150배인데 저평가"라는 식의 어색한 문장이 안 나온다.
+STABLE_VOL_THRESHOLD = 30   # 연환산 변동성 30% 이하면 절대적으로도 안정적이라고 봄
+STABLE_MDD_THRESHOLD = 25   # 최대낙폭 25% 이하면 절대적으로도 안정적이라고 봄
+CHEAP_PER_THRESHOLD = 20    # PER 20배 이하면 절대적으로도 저평가라고 봄
+CHEAP_PBR_THRESHOLD = 2     # PBR 2배 이하면 절대적으로도 저평가라고 봄
+
+
+def _describe_stability(row):
+    vol = row.get("연환산변동성")
+    mdd = row.get("최대낙폭")
+    parts = []
+    if vol is not None and not pd.isna(vol):
+        parts.append(f"연환산 변동성 {vol:.0f}%")
+    if mdd is not None and not pd.isna(mdd):
+        parts.append(f"최대낙폭 {mdd:.0f}%")
+    if not parts:
+        return "가격 흐름이 상대적으로 안정적인 종목이에요."
+
+    label = ", ".join(parts)
+    is_stable = (
+        (vol is None or pd.isna(vol) or vol <= STABLE_VOL_THRESHOLD)
+        and (mdd is None or pd.isna(mdd) or mdd <= STABLE_MDD_THRESHOLD)
+    )
+    if is_stable:
+        return f"{label}로 가격 흐름이 안정적인 편이에요."
+    return f"{label}인 종목이에요. (비슷한 종목들 중에서는 상대적으로 안정적인 편이에요)"
+
+
+def _describe_value(row):
+    per = row.get("PER")
+    pbr = row.get("PBR")
+    valid_per = per is not None and not pd.isna(per) and per > 0
+    valid_pbr = pbr is not None and not pd.isna(pbr) and pbr > 0
+    parts = []
+    if valid_per:
+        parts.append(f"PER {per:.1f}배")
+    if valid_pbr:
+        parts.append(f"PBR {pbr:.1f}배")
+    if not parts:
+        return "밸류에이션 매력이 있는 종목이에요."
+
+    label = ", ".join(parts)
+    is_cheap = (
+        (not valid_per or per <= CHEAP_PER_THRESHOLD)
+        and (not valid_pbr or pbr <= CHEAP_PBR_THRESHOLD)
+    )
+    if is_cheap:
+        return f"{label}로 저평가된 편이에요."
+    return f"{label}인 종목이에요. (비슷한 종목들 중에서는 상대적으로 저평가된 편이에요)"
+
+
+def _describe_dividend(row):
+    div_yield = row.get("배당수익률")
+    if div_yield is not None and not pd.isna(div_yield) and div_yield > 0:
+        return f"배당수익률 {div_yield:.2f}%로 꾸준한 배당을 기대할 수 있어요."
+    return "배당 매력이 있는 종목이에요."
+
+
+FACTOR_DESCRIBERS = {
+    "수익성": _describe_profitability,
+    "안정성": _describe_stability,
+    "가치": _describe_value,
+    "배당": _describe_dividend,
+}
+
+
 def build_reason(row, profile):
     scores = {"수익성": row["수익성점수"], "안정성": row["안정성점수"],
               "가치": row["가치점수"], "배당": row["배당점수"]}
@@ -160,8 +240,8 @@ def build_reason(row, profile):
     # 해당 성향 가중치가 반영된 기여도 기준으로 강점 지표 2개 선정
     contribution = {k: scores[k] * weights[k] for k in scores}
     top_factors = sorted(contribution, key=contribution.get, reverse=True)[:2]
-    parts = [f"{f} 점수 {scores[f]:.0f}점" for f in top_factors]
-    return f"{profile} 투자자에게 적합 - " + ", ".join(parts) + "이 우수합니다."
+    descriptions = [FACTOR_DESCRIBERS[f](row) for f in top_factors]
+    return f"{profile} 투자자에게 잘 맞는 종목이에요. " + " ".join(descriptions)
 
 
 # ------------------------------------------------------------
