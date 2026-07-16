@@ -13,10 +13,10 @@ from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
 # ------------------------------------------------------------
-# 1. 가상 학습 데이터 300개 생성
+# 1. 가상 학습 데이터 10000개 생성
 # ------------------------------------------------------------
 np.random.seed(42)
-N = 300
+N = 10000
 
 # 설문 응답(1~5 정수)을 균등 분포로 생성
 loss_tolerance = np.random.randint(1, 6, N)       # 손실 감수 수준
