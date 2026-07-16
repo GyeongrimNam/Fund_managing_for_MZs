@@ -201,27 +201,136 @@
     margin-top: 10px;
 }
 
-.st-key-recommend_result_page .st-key-recommend_details_card details {
-    margin-top: 9px;
-    border: 1px solid #e3e8ef;
-    border-radius: 11px;
-    background: #ffffff;
-    overflow: hidden;
+.st-key-recommend_result_page .st-key-stock_detail_grid {
+    margin-top: 16px;
 }
 
-.st-key-recommend_result_page .st-key-recommend_details_card details summary {
-    min-width: 0;
-    padding: 13px 15px;
-    color: #354255;
-    font-size: 0.87rem;
-    font-weight: 600;
+.st-key-recommend_result_page .st-key-stock_detail_grid > div[data-testid="stVerticalBlock"] {
+    gap: 14px !important;
+}
+
+.st-key-recommend_result_page [class*="st-key-stock_card_"] {
+    height: 100%;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.st-key-recommend_result_page [class*="st-key-stock_card_"] > div[data-testid="stVerticalBlock"] {
+    min-height: 290px;
+    gap: 12px !important;
+}
+
+.st-key-recommend_result_page .stock-card-content {
+    flex: 1;
+}
+
+.st-key-recommend_result_page .stock-card-sector {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #eaf5ff;
+    color: #1685c5;
+    font-size: 0.74rem;
+    font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.st-key-recommend_result_page .st-key-recommend_details_card details summary:hover {
-    color: #078de5;
+.st-key-recommend_result_page .stock-card-content h4 {
+    margin: 15px 0 2px;
+    color: #1d2939;
+    font-size: 1.12rem;
+}
+
+.st-key-recommend_result_page .stock-card-code {
+    margin: 0;
+    color: #98a2b3;
+    font-size: 0.82rem;
+}
+
+.st-key-recommend_result_page .stock-card-metrics-title {
+    margin: 20px 0 8px;
+    color: #667085;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.st-key-recommend_result_page .stock-card-metrics {
+    border-top: 1px solid #edf1f5;
+}
+
+.st-key-recommend_result_page .stock-card-metrics > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f3f7;
+    color: #7b8798;
+    font-size: 0.82rem;
+}
+
+.st-key-recommend_result_page .stock-card-metrics strong {
+    color: #27364a;
+    font-variant-numeric: tabular-nums;
+}
+
+.st-key-recommend_result_page [class*="st-key-stock_card_"] .stButton {
+    margin-top: auto;
+}
+
+.st-key-recommend_result_page [class*="st-key-stock_card_"] .stButton > button {
+    min-height: 42px;
+    border-color: #cfe2fb;
+    background: #f5f9ff;
+    color: #1677d2;
+}
+
+div[data-testid="stDialog"] .stock-dialog-header h3 {
+    margin: 0;
+    color: #1d2939;
+}
+
+div[data-testid="stDialog"] .stock-dialog-header h3 span,
+div[data-testid="stDialog"] .stock-dialog-sector {
+    color: #98a2b3;
+}
+
+div[data-testid="stDialog"] .stock-dialog-sector {
+    margin: 4px 0 16px;
+}
+
+div[data-testid="stDialog"] .stock-dialog-reason {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f7f9fc;
+    color: #475467;
+    line-height: 1.65;
+}
+
+div[data-testid="stDialog"] .stock-dialog-score {
+    margin: 14px 0 20px;
+    color: #667085;
+}
+
+div[data-testid="stDialog"] .stock-dialog-score strong {
+    color: #1677d2;
+}
+
+/* st.metric(help=...) 툴팁은 #portal에 렌더링되므로 추천 페이지 marker로 범위를 제한한다. */
+body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"],
+body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"] > div {
+    background-color: #f3f4f6 !important;
+    color: #1f2937 !important;
+}
+
+body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"] * {
+    color: #1f2937 !important;
 }
 
 .st-key-recommend_result_page div[data-testid="stHorizontalBlock"] {
@@ -255,5 +364,9 @@
 
     .st-key-recommend_result_page .recommend-etf-item {
         overflow-wrap: anywhere;
+    }
+
+    .st-key-recommend_result_page [class*="st-key-stock_card_"] > div[data-testid="stVerticalBlock"] {
+        min-height: auto;
     }
 }

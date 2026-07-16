@@ -407,6 +407,33 @@ def render_investment_metrics_card(row):
         st.metric("주당배당금", fmt(dps, "원", 0), help=TERM_HELP["주당배당금"])
 
 
+def format_stock_card_metric(value, suffix="", decimals=1):
+    """종목 상세 카드의 핵심 참고 지표를 결측값에 안전하게 표시한다."""
+    if value is None or pd.isna(value):
+        return "-"
+    return f"{value:,.{decimals}f}{suffix}"
+
+
+@st.dialog("종목 상세 정보")
+def show_stock_detail_dialog(stock_data, reason_text, score_col):
+    """실제 추천 종목의 한줄평과 기존 전체 투자 지표를 모달에 표시한다."""
+    from html import escape
+
+    stock_row = pd.Series(stock_data)
+    st.markdown(
+        '<div class="stock-dialog-header">'
+        f'<h3>{escape(str(stock_row["종목명"]))} '
+        f'<span>({escape(str(stock_row["종목코드"]))})</span></h3>'
+        f'<p class="stock-dialog-sector">{escape(str(stock_row["업종명"]))}</p>'
+        f'<p class="stock-dialog-reason">{escape(str(reason_text))}</p>'
+        f'<div class="stock-dialog-score">추천점수 '
+        f'<strong>{format_stock_card_metric(stock_row.get(score_col), decimals=1)}</strong></div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    render_investment_metrics_card(stock_row)
+
+
 # 예산으로 1주도 못 사는 종목은 건너뛰고, 같은 후보군에서 순위가 낮은 다음 종목으로
 # 채워 넣어 (가능하다면) 상위 target_n개를 채운다. 점수 순으로 하나씩 넣어보면서,
 # 이미 뽑힌 종목 중 누구라도 0주가 되게 만드는 후보는 넣지 않고 다음 후보로 넘어간다.
@@ -863,6 +890,12 @@ def predict_profile():
 # 게이지에서 성향별 위치 점수 (안정형=0 ~ 공격형=100)
 PROFILE_SCORE_MAP = {"안정형": 0, "중립형": 50, "공격형": 100}
 
+PROFILE_EMOJIS = {
+    "안정형": "🛡️",
+    "중립형": "⚖️",
+    "공격형": "🚀",
+}
+
 # 설문 문항의 feature 키 -> 근거 요약에 쓸 짧은 항목명
 FEATURE_LABELS = {
     "손실감수수준": "손실 감수도",
@@ -870,6 +903,14 @@ FEATURE_LABELS = {
     "투자기간": "투자 기간",
     "배당선호도": "배당 선호도",
     "변동성감수수준": "변동성 감수도",
+}
+
+FEATURE_EMOJIS = {
+    "손실감수수준": "💧",
+    "기대수익률": "📈",
+    "투자기간": "🗓️",
+    "배당선호도": "💰",
+    "변동성감수수준": "📊",
 }
 
 
@@ -899,13 +940,16 @@ def render_profile_page():
         value = answers.get(feature)
         label_by_value = {v: k for k, v in q["options"]}
         answer_label = label_by_value.get(value, "-")
+        feature_emoji = FEATURE_EMOJIS.get(feature, "•")
         answer_rows.append(
             '<div class="profile-answer-row">'
+            f'<span class="profile-answer-icon">{feature_emoji}</span>'
             f'<span class="profile-answer-label">{escape(FEATURE_LABELS.get(feature, feature))}</span>'
             f'<span class="profile-answer-value">{escape(str(answer_label))}</span>'
             '</div>'
         )
 
+    profile_emoji = PROFILE_EMOJIS.get(predicted_profile, "🎯")
     strategy_rows = "".join(
         '<div class="profile-strategy-row">'
         f'<span class="profile-strategy-number">{index}</span>'
@@ -918,7 +962,7 @@ def render_profile_page():
         st.markdown(
             f"""
             <section class="profile-card profile-summary-card">
-                <div class="profile-badge">🎯 {escape(predicted_profile)}</div>
+                <div class="profile-badge">{profile_emoji} {escape(predicted_profile)}</div>
                 <h1>{escape(user_name)}님은 <strong>{escape(predicted_profile)}</strong>이에요</h1>
                 <div class="profile-description">
                     <span class="profile-info-icon">i</span>
@@ -1123,14 +1167,53 @@ def render_recommend_page():
 
                 with st.container(key="recommend_details_card"):
                     st.markdown("### 📋 종목별 상세 정보")
+                    st.caption(
+                        "배당수익률·ROE·PER은 종목을 비교하기 위한 참고 지표이며, 미래 수익을 보장하지 않습니다."
+                    )
                     ai_per_stock = insights["종목별"] if insights else {}
-                    for index, (_, row) in enumerate(allocated.iterrows()):
-                        reason_text = ai_per_stock.get(row["종목코드"], row[reason_col])
-                        with st.expander(
-                            f"{row['종목명']} ({row['종목코드']}) - {reason_text}",
-                            expanded=False,
-                        ):
-                            render_investment_metrics_card(row)
+                    card_columns = 3
+                    with st.container(key="stock_detail_grid"):
+                        for start in range(0, len(allocated), card_columns):
+                            card_items = allocated.iloc[start:start + card_columns]
+                            cols = st.columns(card_columns)
+                            for col, (_, stock_row) in zip(cols, card_items.iterrows()):
+                                stock_code = str(stock_row["종목코드"])
+                                reason_text = ai_per_stock.get(
+                                    stock_code,
+                                    stock_row[reason_col],
+                                )
+                                eps = stock_row.get("EPS")
+                                bps = stock_row.get("BPS")
+                                roe = (eps / bps * 100) if bps and bps > 0 else None
+
+                                with col:
+                                    with st.container(key=f"stock_card_{stock_code}"):
+                                        st.markdown(
+                                            '<div class="stock-card-content">'
+                                            f'<span class="stock-card-sector">{escape(str(stock_row["업종명"]))}</span>'
+                                            f'<h4>{escape(str(stock_row["종목명"]))}</h4>'
+                                            f'<p class="stock-card-code">{escape(stock_code)}</p>'
+                                            '<p class="stock-card-metrics-title">핵심 참고 지표</p>'
+                                            '<div class="stock-card-metrics">'
+                                            '<div><span>배당수익률</span>'
+                                            f'<strong>{format_stock_card_metric(stock_row.get("배당수익률"), "%", 2)}</strong></div>'
+                                            '<div><span>ROE</span>'
+                                            f'<strong>{format_stock_card_metric(roe, "%", 1)}</strong></div>'
+                                            '<div><span>PER</span>'
+                                            f'<strong>{format_stock_card_metric(stock_row.get("PER"), "배", 1)}</strong></div>'
+                                            '</div></div>',
+                                            unsafe_allow_html=True,
+                                        )
+                                        if st.button(
+                                            "상세 지표 보기",
+                                            key=f"stock_detail_{stock_code}",
+                                            use_container_width=True,
+                                        ):
+                                            show_stock_detail_dialog(
+                                                stock_row.to_dict(),
+                                                reason_text,
+                                                score_col,
+                                            )
 
         button_col1, button_spacer, button_col2 = st.columns([1.2, 2, 1.2])
         with button_col1:

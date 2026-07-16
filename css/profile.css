@@ -139,11 +139,21 @@
 
 .st-key-profile_result_page .profile-answer-row {
     display: grid;
-    grid-template-columns: minmax(120px, 0.7fr) 1.5fr;
-    gap: 18px;
+    grid-template-columns: 24px minmax(120px, 0.7fr) 1.5fr;
+    align-items: center;
+    column-gap: 10px;
     padding: 15px 2px;
     border-bottom: 1px solid #e7edf5;
     font-size: 0.92rem;
+}
+
+.st-key-profile_result_page .profile-answer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .st-key-profile_result_page .profile-answer-row:last-child {
@@ -181,7 +191,11 @@
     }
 
     .st-key-profile_result_page .profile-answer-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 24px 1fr;
         gap: 5px;
+    }
+
+    .st-key-profile_result_page .profile-answer-value {
+        grid-column: 2;
     }
 }
