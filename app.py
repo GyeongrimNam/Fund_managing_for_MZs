@@ -211,24 +211,32 @@ NAV_ITEMS = [
 PAGES_REQUIRE_SURVEY = {"profile", "recommend"}
 
 
+# 각 메뉴 라벨 길이에 맞춘 컬럼 비율 (로고, HOME, 설문조사 하러가기, 내 투자성향 확인하기, 종목 추천받기)
+NAV_COLUMN_RATIOS = [3, 1.1, 1.8, 2.0, 1.5]
+
+
 def render_navbar():
     current_page = st.session_state.page
     logo_html = get_logo_html()
 
-    nav_links = "".join(
-        f'<a class="fomo-navbar-link {"is-active" if current_page == target_page else ""}" '
-        f'href="?page={target_page}">{label}</a>'
-        for label, target_page in NAV_ITEMS
-    )
-    navbar_html = (
-        '<div class="fomo-navbar-shell" role="navigation" aria-label="주요 메뉴">'
-        '<div class="fomo-navbar-inner">'
-        f'<a class="fomo-navbar-logo" href="?page=intro" aria-label="{SITE_NAME} 홈">{logo_html}</a>'
-        f'<div class="fomo-navbar-menu">{nav_links}</div>'
-        '</div>'
-        '</div>'
-    )
-    st.markdown(navbar_html, unsafe_allow_html=True)
+    with st.container(key="main_navigation"):
+        logo_col, *nav_cols = st.columns(NAV_COLUMN_RATIOS)
+        with logo_col:
+            st.markdown(
+                f'<a class="fomo-navbar-logo" href="?page=intro" aria-label="{SITE_NAME} 홈">{logo_html}</a>',
+                unsafe_allow_html=True,
+            )
+        for col, (label, target_page) in zip(nav_cols, NAV_ITEMS):
+            with col:
+                is_active = current_page == target_page
+                if st.button(
+                    label,
+                    key=f"nav_{target_page}",
+                    type="primary" if is_active else "secondary",
+                    use_container_width=True,
+                ):
+                    go_to(target_page)
+                    st.rerun()
 
     notice = st.session_state.pop("nav_notice", None)
     if notice:
@@ -853,71 +861,94 @@ FEATURE_LABELS = {
 
 
 def render_profile_page():
-    st.title("🧭 내 투자성향")
+    from html import escape
 
     user_name = (st.session_state.get("user_name") or "").strip()
     proba = _get_profile_proba()
     predicted_profile = max(proba, key=proba.get) if proba else None
     if not user_name or predicted_profile is None:
         st.error("설문 응답이 없습니다. 설문 페이지로 돌아가주세요.")
-        if st.button("← 설문으로 돌아가기"):
+        if st.button("← 설문으로 돌아가기", key="profile_missing_go_survey"):
             go_to("survey")
             st.rerun()
         return
 
-    with st.container(border=True):
-        st.subheader(f"{user_name}님은 **{predicted_profile}** 성향이에요")
-        st.info(PROFILE_DESCRIPTIONS.get(predicted_profile, ""), icon="ℹ️")
+    gauge_score = sum(
+        proba.get(profile, 0) * score
+        for profile, score in PROFILE_SCORE_MAP.items()
+    )
+    gauge_pct = max(0.0, min(100.0, gauge_score))
 
-        st.markdown("**추천 투자전략**")
-        for tip in STRATEGY_TIPS.get(predicted_profile, []):
-            st.markdown(f"- {tip}")
+    answers = st.session_state.get("survey_answers", {})
+    answer_rows = []
+    for q in SURVEY_QUESTIONS:
+        feature = q["feature"]
+        value = answers.get(feature)
+        label_by_value = {v: k for k, v in q["options"]}
+        answer_label = label_by_value.get(value, "-")
+        answer_rows.append(
+            '<div class="profile-answer-row">'
+            f'<span class="profile-answer-label">{escape(FEATURE_LABELS.get(feature, feature))}</span>'
+            f'<span class="profile-answer-value">{escape(str(answer_label))}</span>'
+            '</div>'
+        )
 
-    st.write("")
-    with st.container(border=True):
-        st.markdown("**투자성향 스펙트럼**")
-        gauge_score = sum(proba.get(profile, 0) * score for profile, score in PROFILE_SCORE_MAP.items())
-        gauge_pct = max(0.0, min(100.0, gauge_score))
+    strategy_rows = "".join(
+        '<div class="profile-strategy-row">'
+        f'<span class="profile-strategy-number">{index}</span>'
+        f'<span>{escape(tip)}</span>'
+        '</div>'
+        for index, tip in enumerate(STRATEGY_TIPS.get(predicted_profile, []), start=1)
+    )
+
+    with st.container(key="profile_result_page"):
         st.markdown(
             f"""
-            <div style="position:relative; height:10px; border-radius:5px;
-                        background:linear-gradient(90deg, #8fb8ff 0%, var(--accent) 50%, #1a3d8f 100%);
-                        margin:8px 0 4px 0;">
-                <div style="position:absolute; left:{gauge_pct}%; top:50%;
-                            transform:translate(-50%, -50%);
-                            width:18px; height:18px; border-radius:50%;
-                            background:#fff; border:3px solid var(--accent-dark);
-                            box-shadow:0 0 4px rgba(0,0,0,0.4);"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary, #888);">
-                <span>안정형</span><span>중립형</span><span>공격형</span>
-            </div>
+            <section class="profile-card profile-summary-card">
+                <div class="profile-badge">🎯 {escape(predicted_profile)}</div>
+                <h1>{escape(user_name)}님은 <strong>{escape(predicted_profile)}</strong>이에요</h1>
+                <div class="profile-description">
+                    <span class="profile-info-icon">i</span>
+                    <span>{escape(PROFILE_DESCRIPTIONS.get(predicted_profile, ""))}</span>
+                </div>
+                <h2>추천 투자전략</h2>
+                <div class="profile-strategy-list">{strategy_rows}</div>
+            </section>
+
+            <section class="profile-card profile-spectrum-card">
+                <h2>투자성향 스펙트럼</h2>
+                <div class="profile-gauge" role="img" aria-label="투자성향 스펙트럼 {gauge_pct:.1f}%">
+                    <div class="profile-gauge-fill" style="width:{gauge_pct:.4f}%"></div>
+                    <div class="profile-gauge-marker" style="left:{gauge_pct:.4f}%"></div>
+                </div>
+                <div class="profile-gauge-labels">
+                    <span>안정형</span><span>중립형</span><span>공격형</span>
+                </div>
+            </section>
+
+            <section class="profile-card profile-answers-card">
+                <h2>이렇게 답변했어요</h2>
+                <div class="profile-answer-list">{''.join(answer_rows)}</div>
+            </section>
             """,
             unsafe_allow_html=True,
         )
 
-    st.write("")
-    with st.container(border=True):
-        st.markdown("**이렇게 답변하셨어요**")
-        answers = st.session_state.get("survey_answers", {})
-        for q in SURVEY_QUESTIONS:
-            feature = q["feature"]
-            value = answers.get(feature)
-            label_by_value = {v: k for k, v in q["options"]}
-            answer_label = label_by_value.get(value, "-")
-            st.markdown(f"- **{FEATURE_LABELS.get(feature, feature)}**: {answer_label}")
-
-    st.write("")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("← 설문 다시하기"):
-            reset_survey_state()
-            go_to("survey")
-            st.rerun()
-    with col2:
-        if st.button("📈 종목 추천받으러가기", type="primary"):
-            go_to("recommend")
-            st.rerun()
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("← 설문 다시하기", key="profile_restart_survey", use_container_width=True):
+                reset_survey_state()
+                go_to("survey")
+                st.rerun()
+        with col2:
+            if st.button(
+                "📈 종목 추천받으러가기",
+                type="primary",
+                key="profile_go_recommend",
+                use_container_width=True,
+            ):
+                go_to("recommend")
+                st.rerun()
 
 
 # ------------------------------------------------------------
@@ -1068,6 +1099,8 @@ def main():
         load_css("intro.css")
     elif current_page == "survey":
         load_css("survey.css")
+    elif current_page == "profile":
+        load_css("profile.css")
 
     missing = files_missing()
     if missing:

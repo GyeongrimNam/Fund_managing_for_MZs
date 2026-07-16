@@ -38,9 +38,12 @@ html {
     background: #ffffff;
 }
 
+/* Streamlit 기본 헤더는 높이를 0으로 줄여도 z-index(999990)가 계속 남아 있어
+   상단 96px 영역(네비게이션 바)의 클릭을 가로챈다. 완전히 클릭을 통과시킨다. */
 header[data-testid="stHeader"] {
-    height: 0;
+    height: 0 !important;
     background: transparent;
+    pointer-events: none !important;
 }
 
 div[data-testid="stToolbar"] {
@@ -113,30 +116,6 @@ div[role="radiogroup"] label {
     margin-right: 4px;
 }
 
-/* 전용 HTML 구조로 렌더링되는 상단 네비게이션. Streamlit columns와 분리한다. */
-.fomo-navbar-shell {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    height: var(--fomo-nav-height);
-    background: rgba(255, 255, 255, 0.94);
-    border-bottom: 1px solid rgba(229, 232, 235, 0.9);
-    box-shadow: 0 6px 24px rgba(25, 31, 40, 0.05);
-    backdrop-filter: blur(14px);
-}
-
-.fomo-navbar-inner {
-    width: min(calc(100% - (var(--fomo-page-x) * 2)), var(--fomo-content-max));
-    height: 100%;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-}
-
 .fomo-navbar-logo {
     display: inline-flex;
     align-items: center;
@@ -162,40 +141,92 @@ div[role="radiogroup"] label {
     color: var(--accent);
 }
 
-.fomo-navbar-menu {
+/* 상단 네비게이션 바: st.container(key="main_navigation") 안의 실제 st.button() 메뉴.
+   기존 .fomo-navbar-shell/inner/menu/link의 가짜 <a> 마크업을 대체한다. */
+[class*="st-key-main_navigation"] {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: var(--fomo-nav-height);
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid rgba(229, 232, 235, 0.9);
+    box-shadow: 0 6px 24px rgba(25, 31, 40, 0.05);
+    backdrop-filter: blur(14px);
+    box-sizing: border-box;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    min-width: 0;
 }
 
-.fomo-navbar-link {
-    display: inline-flex;
+[class*="st-key-main_navigation"] [data-testid="stVerticalBlock"] {
+    width: 100%;
+}
+
+[class*="st-key-main_navigation"] div[data-testid="stHorizontalBlock"] {
+    width: min(calc(100% - (var(--fomo-page-x) * 2)), var(--fomo-content-max)) !important;
+    margin: 0 auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+[class*="st-key-main_navigation"] [data-testid="column"] {
+    display: flex;
     align-items: center;
+}
+
+[class*="st-key-main_navigation"] [data-testid="column"]:first-child {
+    justify-content: flex-start;
+}
+
+[class*="st-key-main_navigation"] [data-testid="column"]:not(:first-child) {
     justify-content: center;
+}
+
+[class*="st-key-main_navigation"] [data-testid="stElementContainer"] {
+    width: 100%;
+}
+
+/* 메뉴 버튼: 기존 .fomo-navbar-link 알약형 디자인을 st.button에 그대로 적용 */
+[class*="st-key-main_navigation"] .stButton > button {
+    width: 100%;
     min-height: 42px;
+    height: 42px;
     padding: 0 16px;
+    border: none;
     border-radius: 999px;
+    background: transparent;
     color: #4E5968;
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1;
-    text-decoration: none !important;
     white-space: nowrap;
     transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
-.fomo-navbar-link:hover {
+[class*="st-key-main_navigation"] .stButton > button:hover {
     color: var(--accent-dark);
     background: var(--accent-soft);
-    text-decoration: none !important;
+    border-color: transparent;
     transform: translateY(-1px);
 }
 
-.fomo-navbar-link.is-active {
-    color: var(--accent-dark);
-    background: var(--accent-soft);
+/* 활성 메뉴(현재 페이지): 전역 primary 그라데이션 대신 연한 파란 배경 + 브랜드 파란 텍스트로 표시 */
+[class*="st-key-main_navigation"] .stButton > button[kind="primary"] {
+    background: var(--accent-soft) !important;
+    color: var(--accent-dark) !important;
+    box-shadow: none !important;
+}
+
+[class*="st-key-main_navigation"] .stButton > button[kind="primary"]:hover {
+    background: var(--accent-soft) !important;
+    color: var(--accent-dark) !important;
+    filter: none !important;
+    transform: translateY(-1px);
 }
 
 /* 공통 반응형 */
@@ -205,24 +236,15 @@ div[role="radiogroup"] label {
         --fomo-page-x: clamp(16px, 4vw, 32px);
     }
 
-    .fomo-navbar-inner {
-        gap: 18px;
+    [class*="st-key-main_navigation"] div[data-testid="stHorizontalBlock"] {
+        gap: 4px !important;
     }
 
-    .fomo-navbar-menu {
-        gap: 4px;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-
-    .fomo-navbar-menu::-webkit-scrollbar {
-        display: none;
-    }
-
-    .fomo-navbar-link {
+    [class*="st-key-main_navigation"] .stButton > button {
         min-height: 38px;
-        padding: 0 11px;
-        font-size: 0.86rem;
+        height: 38px;
+        padding: 0 8px;
+        font-size: 0.8rem;
     }
 }
 
