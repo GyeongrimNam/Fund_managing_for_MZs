@@ -91,6 +91,16 @@
     border-bottom: 0;
 }
 
+.st-key-recommend_result_page .recommend-price-notice {
+    margin: 12px 0 0;
+    color: #8a94a6;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: left;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
 .st-key-recommend_result_page .stock-code { color: #687689; }
 .st-key-recommend_result_page .stock-name { color: #202b3c; font-weight: 700; }
 .st-key-recommend_result_page .current-price { color: #078de5; font-weight: 800; }
@@ -322,6 +332,41 @@ div[data-testid="stDialog"] .stock-dialog-score strong {
     color: #1677d2;
 }
 
+/* 종목 상세 모달 안의 st.metric 값은 EPS/BPS/DPS처럼 긴 원화 값도 단위까지 보이게 한다. */
+div[data-testid="stDialog"] div[data-testid="stHorizontalBlock"],
+[role="dialog"] div[data-testid="stHorizontalBlock"] {
+    gap: 12px !important;
+}
+
+div[data-testid="stDialog"] div[data-testid="column"],
+[role="dialog"] div[data-testid="column"] {
+    min-width: 0 !important;
+}
+
+div[data-testid="stDialog"] div[data-testid="stMetric"],
+[role="dialog"] div[data-testid="stMetric"] {
+    min-width: 0 !important;
+    overflow: visible !important;
+}
+
+div[data-testid="stDialog"] div[data-testid="stMetricValue"],
+[role="dialog"] div[data-testid="stMetricValue"],
+div[data-testid="stDialog"] div[data-testid="stMetricValue"] *,
+[role="dialog"] div[data-testid="stMetricValue"] * {
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    line-height: 1.15 !important;
+}
+
+div[data-testid="stDialog"] div[data-testid="stMetricValue"],
+[role="dialog"] div[data-testid="stMetricValue"] {
+    font-size: clamp(1.35rem, 2.2vw, 2.15rem) !important;
+}
+
 /* st.metric(help=...) 툴팁은 portal 영역에 렌더링되어 추천 페이지 내부 선택자로는 잡히지 않는다.
    recommend.css는 추천 페이지에서만 로드되므로 툴팁 자체 선택자에만 최소 전역 적용한다. */
 [role="tooltip"],
@@ -398,6 +443,22 @@ div[data-testid="stDialog"] .stock-dialog-score strong {
 }
 
 @media (max-width: 700px) {
+    div[data-testid="stDialog"] div[data-testid="stHorizontalBlock"],
+    [role="dialog"] div[data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+
+    div[data-testid="stDialog"] div[data-testid="column"],
+    [role="dialog"] div[data-testid="column"] {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+    }
+
+    div[data-testid="stDialog"] div[data-testid="stMetricValue"],
+    [role="dialog"] div[data-testid="stMetricValue"] {
+        font-size: clamp(1.45rem, 7vw, 2rem) !important;
+    }
+
     .st-key-recommend_result_page {
         padding: 0 13px 13px;
         border-radius: 18px;

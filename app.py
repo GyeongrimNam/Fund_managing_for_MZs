@@ -1084,7 +1084,11 @@ def render_recommend_page():
                     '<div class="recommend-table-wrap"><table class="recommend-table">'
                     '<thead><tr><th>종목코드</th><th>종목명</th><th>업종명</th>'
                     '<th>현재가(원)</th><th>매수수량(주)</th><th>투자금액(원)</th><th>추천점수</th></tr></thead>'
-                    f'<tbody>{"".join(stock_rows)}</tbody></table></div></section>',
+                    f'<tbody>{"".join(stock_rows)}</tbody></table></div>'
+                    '<p class="recommend-price-notice">'
+                    '※ 현재가는 조회 시점 기준이라 실시간 시세와 차이가 있을 수 있어요. '
+                    '정확한 실시간 가격은 증권사 앱이나 홈페이지에서 확인해주세요.'
+                    '</p></section>',
                     unsafe_allow_html=True,
                 )
 
@@ -1142,7 +1146,6 @@ def render_recommend_page():
                 bar_df = allocated[["종목명"] + sub_score_cols].melt(
                     id_vars="종목명", var_name="구성 요소", value_name="점수"
                 )
-                total_df = allocated[["종목명", score_col]].rename(columns={score_col: "추천점수"})
                 bars = alt.Chart(bar_df).mark_bar(cornerRadiusEnd=4).encode(
                     y=alt.Y("종목명:N", sort=stock_order, title=None, axis=alt.Axis(labelLimit=110)),
                     x=alt.X("점수:Q", stack="zero", title=None, axis=None),
@@ -1154,12 +1157,7 @@ def render_recommend_page():
                     ),
                     tooltip=["종목명", "구성 요소", alt.Tooltip("점수:Q", format=".1f")],
                 )
-                labels = alt.Chart(total_df).mark_text(align="left", dx=8, color="#526071").encode(
-                    y=alt.Y("종목명:N", sort=stock_order),
-                    x=alt.X("추천점수:Q"),
-                    text=alt.Text("추천점수:Q", format=".0f"),
-                )
-                chart = (bars + labels).properties(height=max(220, 34 * len(stock_order) + 55)).configure_view(stroke=None)
+                chart = bars.properties(height=max(220, 34 * len(stock_order) + 55)).configure_view(stroke=None)
                 with st.container(key="recommend_chart_card"):
                     st.markdown("### 📊 추천 점수 그래프")
                     st.caption("종목별 4개 점수(수익성/안정성/가치/배당)를 가로 막대로 쌓아서 보여줍니다.")
