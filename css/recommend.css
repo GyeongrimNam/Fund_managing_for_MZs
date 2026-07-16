@@ -322,15 +322,70 @@ div[data-testid="stDialog"] .stock-dialog-score strong {
     color: #1677d2;
 }
 
-/* st.metric(help=...) 툴팁은 #portal에 렌더링되므로 추천 페이지 marker로 범위를 제한한다. */
-body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"],
-body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"] > div {
-    background-color: #f3f4f6 !important;
+/* st.metric(help=...) 툴팁은 portal 영역에 렌더링되어 추천 페이지 내부 선택자로는 잡히지 않는다.
+   recommend.css는 추천 페이지에서만 로드되므로 툴팁 자체 선택자에만 최소 전역 적용한다. */
+[role="tooltip"],
+[data-baseweb="tooltip"] {
+    max-width: 360px !important;
+    min-width: 220px !important;
+    width: max-content !important;
+
+    padding: 12px 16px !important;
+
+    background: #eef1f5 !important;
     color: #1f2937 !important;
+
+    border: 1px solid #d8dee8 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14) !important;
+
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
 }
 
-body:has(.st-key-recommend_result_page) [data-baseweb="tooltip"][role="tooltip"] * {
-    color: #1f2937 !important;
+[role="tooltip"] > div,
+[role="tooltip"] > div > div,
+[data-baseweb="tooltip"] > div,
+[data-baseweb="tooltip"] > div > div,
+[data-testid="stTooltipContent"],
+[data-testid="stTooltipContent"] > div {
+    max-width: 360px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: inherit !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+    line-height: 1.55 !important;
+}
+
+[role="tooltip"] *,
+[data-baseweb="tooltip"] * {
+    color: inherit !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+}
+
+[role="tooltip"] p,
+[role="tooltip"] span,
+[data-baseweb="tooltip"] p,
+[data-baseweb="tooltip"] span,
+[data-testid="stTooltipContent"] p,
+[data-testid="stTooltipContent"] span {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    color: inherit !important;
 }
 
 .st-key-recommend_result_page div[data-testid="stHorizontalBlock"] {
