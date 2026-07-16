@@ -211,8 +211,9 @@ NAV_ITEMS = [
 PAGES_REQUIRE_SURVEY = {"profile", "recommend"}
 
 
-# 각 메뉴 라벨 길이에 맞춘 컬럼 비율 (로고, HOME, 설문조사 하러가기, 내 투자성향 확인하기, 종목 추천받기)
-NAV_COLUMN_RATIOS = [3, 1.1, 1.8, 2.0, 1.5]
+# 로고는 왼쪽에, 메뉴 4개는 spacer 뒤 오른쪽 영역에 모아 배치한다.
+# (로고, spacer, HOME, 설문조사 하러가기, 내 투자성향 확인하기, 종목 추천받기)
+NAV_COLUMN_RATIOS = [2.4, 4.2, 0.9, 1.45, 1.75, 1.35]
 
 
 def render_navbar():
@@ -220,7 +221,7 @@ def render_navbar():
     logo_html = get_logo_html()
 
     with st.container(key="main_navigation"):
-        logo_col, *nav_cols = st.columns(NAV_COLUMN_RATIOS)
+        logo_col, spacer_col, *nav_cols = st.columns(NAV_COLUMN_RATIOS)
         with logo_col:
             st.markdown(
                 f'<a class="fomo-navbar-logo" href="?page=intro" aria-label="{SITE_NAME} 홈">{logo_html}</a>',
@@ -650,6 +651,34 @@ SECTOR_STEP = 2 + len(SURVEY_QUESTIONS)
 TOTAL_SURVEY_STEPS = SECTOR_STEP + 1
 
 
+@st.fragment
+def render_sector_selector(sector_options):
+    """실제 업종 목록의 선택 UI만 fragment 범위에서 다시 실행한다."""
+    sectors_per_row = 4
+    for row_start in range(0, len(sector_options), sectors_per_row):
+        row_sectors = sector_options[row_start:row_start + sectors_per_row]
+        cols = st.columns(sectors_per_row)
+        for col, sector in zip(cols, row_sectors):
+            is_selected = sector in st.session_state.sector_selection
+            if col.button(
+                sector,
+                key=f"sector_btn_{sector}",
+                type="primary" if is_selected else "secondary",
+                use_container_width=True,
+            ):
+                if is_selected:
+                    st.session_state.sector_selection.discard(sector)
+                else:
+                    st.session_state.sector_selection.add(sector)
+                st.rerun(scope="fragment")
+
+    selected_sectors = sorted(st.session_state.sector_selection)
+    if selected_sectors:
+        st.caption(f"선택된 섹터: {', '.join(selected_sectors)}")
+    else:
+        st.caption("선택 없이 넘어가면 전체 종목 대상으로 추천합니다")
+
+
 def render_survey_page():
     if "survey_step" not in st.session_state:
         st.session_state.survey_step = 0
@@ -737,25 +766,32 @@ def render_survey_page():
     elif step in QUESTION_STEPS:
         q_idx = step - QUESTION_STEPS[0]
         q = SURVEY_QUESTIONS[q_idx]
-        st.markdown(
-            f"""
-            <section class="fomo-survey-copy">
-                <span class="fomo-survey-badge is-purple">성향 분석 · {q_idx + 1} / {len(SURVEY_QUESTIONS)}</span>
-                <h1>{q["question"]}</h1>
-            </section>
-            """,
-            unsafe_allow_html=True,
-        )
+        with st.container(key="survey_question_card"):
+            st.markdown(
+                f"""
+                <section class="fomo-survey-copy">
+                    <span class="fomo-survey-badge is-purple">성향 분석 · {q_idx + 1} / {len(SURVEY_QUESTIONS)}</span>
+                    <h1>{q["question"]}</h1>
+                </section>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        labels = [label for label, _ in q["options"]]
-        value_map = dict(q["options"])
-        label_by_value = {v: k for k, v in q["options"]}
+            labels = [label for label, _ in q["options"]]
+            value_map = dict(q["options"])
+            label_by_value = {v: k for k, v in q["options"]}
 
-        current_value = st.session_state.survey_wip.get(q["feature"])
-        current_label = label_by_value.get(current_value)
-        default_index = labels.index(current_label) if current_label in labels else None
+            current_value = st.session_state.survey_wip.get(q["feature"])
+            current_label = label_by_value.get(current_value)
+            default_index = labels.index(current_label) if current_label in labels else None
 
-        selected_label = st.radio(q["question"], labels, index=default_index, key=q["key"], label_visibility="collapsed")
+            selected_label = st.radio(
+                q["question"],
+                labels,
+                index=default_index,
+                key=q["key"],
+                label_visibility="collapsed",
+            )
         st.session_state.survey_wip[q["feature"]] = value_map.get(selected_label)
         can_advance = selected_label is not None
         error_message = "답을 선택해주세요."
@@ -773,30 +809,7 @@ def render_survey_page():
         )
         scored = load_scored_stocks()
         sector_options = sorted(scored["업종명"].dropna().unique().tolist())
-
-        SECTORS_PER_ROW = 4
-        for row_start in range(0, len(sector_options), SECTORS_PER_ROW):
-            row_sectors = sector_options[row_start:row_start + SECTORS_PER_ROW]
-            cols = st.columns(SECTORS_PER_ROW)
-            for col, sector in zip(cols, row_sectors):
-                is_selected = sector in st.session_state.sector_selection
-                if col.button(
-                    sector,
-                    key=f"sector_btn_{sector}",
-                    type="primary" if is_selected else "secondary",
-                    use_container_width=True,
-                ):
-                    if is_selected:
-                        st.session_state.sector_selection.discard(sector)
-                    else:
-                        st.session_state.sector_selection.add(sector)
-                    st.rerun()
-
-        selected_sectors = sorted(st.session_state.sector_selection)
-        if selected_sectors:
-            st.caption(f"선택된 섹터: {', '.join(selected_sectors)}")
-        else:
-            st.caption("선택 없이 넘어가면 전체 종목 대상으로 추천합니다")
+        render_sector_selector(sector_options)
 
     with st.container(key="survey_bottom_nav"):
         nav1, _, nav2 = st.columns([2, 6, 2])
@@ -955,13 +968,13 @@ def render_profile_page():
 # 페이지 4: 종목 추천받기
 # ------------------------------------------------------------
 def render_recommend_page():
-    st.title("🎯 종목 추천")
+    from html import escape
 
     budget = st.session_state.get("budget")
     predicted_profile = predict_profile()
     if not budget or predicted_profile is None:
         st.error("설문 응답이 없습니다. 설문 페이지로 돌아가주세요.")
-        if st.button("← 설문으로 돌아가기"):
+        if st.button("← 설문으로 돌아가기", key="recommend_missing_go_survey"):
             go_to("survey")
             st.rerun()
         return
@@ -971,9 +984,9 @@ def render_recommend_page():
     # 관심 섹터는 2페이지(설문) 마지막 단계에서 이미 선택했으므로 여기서는 그 값을 그대로 사용한다.
     selected_sectors = sorted(st.session_state.get("sector_selection", set()))
     if selected_sectors:
-        st.caption(f"관심 섹터({', '.join(selected_sectors)}) 안에서 추천합니다.")
+        sector_message = f"관심 섹터({', '.join(selected_sectors)}) 안에서 추천합니다."
     else:
-        st.caption("전체 종목을 대상으로 추천합니다.")
+        sector_message = "전체 종목을 대상으로 추천합니다."
 
     candidates = scored.copy()
     if selected_sectors:
@@ -982,110 +995,154 @@ def render_recommend_page():
     score_col = f"추천점수_{predicted_profile}"
     reason_col = f"추천이유_{predicted_profile}"
 
-    if candidates.empty:
-        st.warning("선택한 섹터에 해당하는 종목이 없습니다. 섹터 선택을 조정해주세요.")
-    else:
-        allocated = select_top_n_within_budget(candidates, budget, score_col, target_n=10)
+    with st.container(key="recommend_result_page"):
+        st.markdown(
+            '<header class="recommend-header">'
+            '<h1>🎯 종목 추천</h1>'
+            f'<p>{escape(sector_message)}</p>'
+            '</header>',
+            unsafe_allow_html=True,
+        )
 
-        st.write("")
-        with st.container(border=True):
-            st.subheader("🏆 추천 종목 상위 10개")
+        if candidates.empty:
+            st.warning("선택한 섹터에 해당하는 종목이 없습니다. 섹터 선택을 조정해주세요.")
+        else:
+            allocated = select_top_n_within_budget(candidates, budget, score_col, target_n=10)
+
             if allocated.empty:
-                st.warning("예산이 부족해 1주도 매수할 수 없습니다. 예산을 늘려주세요.")
+                with st.container(key="recommend_stocks_card"):
+                    st.markdown("### 🏆 추천 종목 상위 10개")
+                    st.warning("예산이 부족해 1주도 매수할 수 없습니다. 예산을 늘려주세요.")
             else:
-                if len(allocated) < 10:
-                    st.caption(f"예산으로 매수 가능한 종목이 {len(allocated)}개뿐이라 그만큼만 추천합니다. 예산을 늘리면 더 많이 추천됩니다.")
-                display_cols = {
-                    "종목코드": "종목코드",
-                    "종목명": "종목명",
-                    "업종명": "업종명",
-                    "현재가": "현재가(원)",
-                    "매수수량": "매수수량(주)",
-                    "투자금액": "투자금액(원)",
-                    score_col: "추천점수",
-                }
-                display_df = allocated[list(display_cols.keys())].rename(columns=display_cols)
-                for col in ["현재가(원)", "매수수량(주)", "투자금액(원)"]:
-                    display_df[col] = display_df[col].map(lambda x: f"{x:,.0f}")
-                st.dataframe(display_df, hide_index=True, use_container_width=True)
-
-        etf_list = get_etf_recommendations(predicted_profile, selected_sectors)
-        if etf_list:
-            st.write("")
-            with st.container(border=True):
-                st.subheader("📦 추천 ETF")
-                st.caption("개별 종목과 별개로, 분산투자용으로 참고할 만한 ETF예요.")
-                for etf in etf_list:
-                    st.markdown(f"- **{etf['종목명']}** ({etf['종목코드']}) - {etf['설명']}")
-                    st.caption(f"　주요 구성종목: {etf['구성종목']}")
-                st.caption("※ 구성종목은 대표 예시이며, 정확한 비중은 운용사 홈페이지에서 확인하세요.")
-
-        if not allocated.empty:
-            insights = generate_ai_insights(predicted_profile, allocated, score_col, reason_col)
-            if insights:
-                st.write("")
-                with st.container(border=True):
-                    st.subheader("🤖 AI 요약")
-                    st.write(insights["전체요약"])
-            elif get_gemini_client() is None:
-                st.caption(
-                    "💡 Colab Secrets에 GEMINI_API_KEY를 등록하면 추천 결과를 AI가 자연어로 요약해줍니다."
+                stock_rows = []
+                for _, row in allocated.iterrows():
+                    stock_rows.append(
+                        '<tr>'
+                        f'<td class="stock-code">{escape(str(row["종목코드"]))}</td>'
+                        f'<td class="stock-name">{escape(str(row["종목명"]))}</td>'
+                        f'<td><span class="sector-pill">{escape(str(row["업종명"]))}</span></td>'
+                        f'<td class="current-price">{row["현재가"]:,.0f}</td>'
+                        f'<td>{row["매수수량"]:,.0f}</td>'
+                        f'<td>{row["투자금액"]:,.0f}</td>'
+                        f'<td><span class="score-pill">{row[score_col]:,.1f}</span></td>'
+                        '</tr>'
+                    )
+                shortage_text = (
+                    f'예산으로 매수 가능한 종목이 {len(allocated)}개뿐이라 '
+                    '그만큼만 추천합니다. 예산을 늘리면 더 많이 추천됩니다.'
+                    if len(allocated) < 10
+                    else '예산 내에서 매수 가능한 상위 추천 종목입니다.'
+                )
+                st.markdown(
+                    '<section class="recommend-card recommend-stocks-card">'
+                    '<h2>🏆 추천 종목 상위 10개</h2>'
+                    f'<p class="card-description">{escape(shortage_text)}</p>'
+                    '<div class="recommend-table-wrap"><table class="recommend-table">'
+                    '<thead><tr><th>종목코드</th><th>종목명</th><th>업종명</th>'
+                    '<th>현재가(원)</th><th>매수수량(주)</th><th>투자금액(원)</th><th>추천점수</th></tr></thead>'
+                    f'<tbody>{"".join(stock_rows)}</tbody></table></div></section>',
+                    unsafe_allow_html=True,
                 )
 
-            st.write("")
-            with st.container(border=True):
-                st.subheader("💰 예산 요약")
-                total_invested = allocated["투자금액"].sum()
-                c1, c2, c3 = st.columns(3)
-                c1.metric("총 예산", f"{budget:,.0f}원")
-                c2.metric("총 투자금액", f"{total_invested:,.0f}원")
-                c3.metric("미투자 잔액", f"{budget - total_invested:,.0f}원")
+                etf_list = get_etf_recommendations(predicted_profile, selected_sectors)
+                if etf_list:
+                    etf_rows = "".join(
+                        '<div class="recommend-etf-item">'
+                        f'<div><strong>{escape(str(etf["종목명"]))}</strong> '
+                        f'<span>({escape(str(etf["종목코드"]))})</span> - {escape(str(etf["설명"]))}</div>'
+                        f'<small>주요 구성종목: {escape(str(etf["구성종목"]))}</small>'
+                        '</div>'
+                        for etf in etf_list
+                    )
+                    st.markdown(
+                        '<section class="recommend-card recommend-etf-card">'
+                        '<h2>📦 추천 ETF</h2>'
+                        '<p class="card-description">개별 종목과 별개로, 분산투자용으로 참고할 만한 ETF예요.</p>'
+                        f'<div class="recommend-etf-list">{etf_rows}</div>'
+                        '<p class="recommend-note">※ 구성종목은 대표 예시이며, 정확한 비중은 운용사 홈페이지에서 확인하세요.</p>'
+                        '</section>',
+                        unsafe_allow_html=True,
+                    )
 
-            st.write("")
-            with st.container(border=True):
-                st.subheader("📈 추천 점수 그래프")
-                st.caption("종목별로 4개 점수(수익성/안정성/가치/배당)를 가로 막대로 쌓아서 보여줍니다.")
+                insights = generate_ai_insights(predicted_profile, allocated, score_col, reason_col)
+                if insights:
+                    with st.container(key="recommend_ai_card"):
+                        st.markdown("### 😊 AI 요약")
+                        st.write(insights["전체요약"])
+                elif get_gemini_client() is None:
+                    with st.container(key="recommend_ai_card"):
+                        st.markdown("### 😊 AI 요약")
+                        st.caption("💡 Colab Secrets에 GEMINI_API_KEY를 등록하면 추천 결과를 AI가 자연어로 요약해줍니다.")
+
+                total_invested = allocated["투자금액"].sum()
+                remaining = budget - total_invested
+                investment_ratio = total_invested / budget * 100 if budget > 0 else 0
+                st.markdown(
+                    '<section class="recommend-card recommend-budget-card">'
+                    '<h2>💰 예산 요약</h2>'
+                    '<div class="budget-summary-grid">'
+                    f'<div><span>총 예산</span><strong>{budget:,.0f}원</strong></div>'
+                    f'<div><span>총 투자금액</span><strong class="invested">{total_invested:,.0f}원</strong></div>'
+                    f'<div><span>미투자 잔액</span><strong class="remaining">{remaining:,.0f}원</strong></div>'
+                    '</div>'
+                    '<div class="investment-ratio-label">'
+                    f'<span>투자 비율</span><span>{investment_ratio:.0f}%</span></div>'
+                    '<div class="investment-ratio-track">'
+                    f'<div style="width:{max(0.0, min(100.0, investment_ratio)):.4f}%"></div></div>'
+                    '</section>',
+                    unsafe_allow_html=True,
+                )
+
                 sub_score_cols = ["수익성점수", "안정성점수", "가치점수", "배당점수"]
-                stock_order = allocated.sort_values(score_col, ascending=False)["종목명"].tolist()
+                stock_order = allocated["종목명"].tolist()
                 bar_df = allocated[["종목명"] + sub_score_cols].melt(
                     id_vars="종목명", var_name="구성 요소", value_name="점수"
                 )
-                chart = (
-                    alt.Chart(bar_df)
-                    .mark_bar()
-                    .encode(
-                        y=alt.Y("종목명:N", sort=stock_order, title=None),
-                        x=alt.X("점수:Q", stack="zero", title="점수"),
-                        color=alt.Color(
-                            "구성 요소:N", sort=sub_score_cols, title="구성 요소"
-                        ),
-                        tooltip=["종목명", "구성 요소", "점수"],
-                    )
-                    .properties(height=max(220, 34 * len(stock_order) + 40))
+                total_df = allocated[["종목명", score_col]].rename(columns={score_col: "추천점수"})
+                bars = alt.Chart(bar_df).mark_bar(cornerRadiusEnd=4).encode(
+                    y=alt.Y("종목명:N", sort=stock_order, title=None, axis=alt.Axis(labelLimit=110)),
+                    x=alt.X("점수:Q", stack="zero", title=None, axis=None),
+                    color=alt.Color(
+                        "구성 요소:N",
+                        sort=sub_score_cols,
+                        scale=alt.Scale(domain=sub_score_cols, range=["#203f91", "#13bce8", "#ff6974", "#ef91ca"]),
+                        legend=alt.Legend(title=None, orient="bottom", direction="horizontal"),
+                    ),
+                    tooltip=["종목명", "구성 요소", alt.Tooltip("점수:Q", format=".1f")],
                 )
-                st.altair_chart(chart, use_container_width=True)
+                labels = alt.Chart(total_df).mark_text(align="left", dx=8, color="#526071").encode(
+                    y=alt.Y("종목명:N", sort=stock_order),
+                    x=alt.X("추천점수:Q"),
+                    text=alt.Text("추천점수:Q", format=".0f"),
+                )
+                chart = (bars + labels).properties(height=max(220, 34 * len(stock_order) + 55)).configure_view(stroke=None)
+                with st.container(key="recommend_chart_card"):
+                    st.markdown("### 📊 추천 점수 그래프")
+                    st.caption("종목별 4개 점수(수익성/안정성/가치/배당)를 가로 막대로 쌓아서 보여줍니다.")
+                    st.altair_chart(chart, use_container_width=True)
 
-            st.write("")
-            with st.container(border=True):
-                st.subheader("🗒️ 종목별 상세 정보")
-                ai_per_stock = insights["종목별"] if insights else {}
-                for _, row in allocated.iterrows():
-                    # AI가 해당 종목코드에 대한 한줄평을 못 준 경우 규칙 기반 설명으로 대체
-                    reason_text = ai_per_stock.get(row["종목코드"], row[reason_col])
-                    with st.expander(f"{row['종목명']} ({row['종목코드']}) - {reason_text}"):
-                        render_investment_metrics_card(row)
+                with st.container(key="recommend_details_card"):
+                    st.markdown("### 📋 종목별 상세 정보")
+                    ai_per_stock = insights["종목별"] if insights else {}
+                    for index, (_, row) in enumerate(allocated.iterrows()):
+                        reason_text = ai_per_stock.get(row["종목코드"], row[reason_col])
+                        with st.expander(
+                            f"{row['종목명']} ({row['종목코드']}) - {reason_text}",
+                            expanded=False,
+                        ):
+                            render_investment_metrics_card(row)
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("← 설문 다시하기"):
-            reset_survey_state()
-            go_to("survey")
-            st.rerun()
-    with col2:
-        if st.button("처음으로"):
-            reset_survey_state()
-            go_to("intro")
-            st.rerun()
+        button_col1, button_spacer, button_col2 = st.columns([1.2, 2, 1.2])
+        with button_col1:
+            if st.button("← 설문 다시하기", key="recommend_restart_survey", use_container_width=True):
+                reset_survey_state()
+                go_to("survey")
+                st.rerun()
+        with button_col2:
+            if st.button("처음으로 🏠", key="recommend_go_home", type="primary", use_container_width=True):
+                reset_survey_state()
+                go_to("intro")
+                st.rerun()
 
 
 # ------------------------------------------------------------
@@ -1101,6 +1158,8 @@ def main():
         load_css("survey.css")
     elif current_page == "profile":
         load_css("profile.css")
+    elif current_page == "recommend":
+        load_css("recommend.css")
 
     missing = files_missing()
     if missing:

@@ -152,8 +152,10 @@ div[role="radiogroup"] label {
     width: 100vw !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 0 !important;
-    height: var(--fomo-nav-height);
+    margin-bottom: 0 !important;
+    padding: 6px 0 !important;
+    min-height: auto !important;
+    height: auto !important;
     background: rgba(255, 255, 255, 0.94);
     border-bottom: 1px solid rgba(229, 232, 235, 0.9);
     box-shadow: 0 6px 24px rgba(25, 31, 40, 0.05);
@@ -165,18 +167,31 @@ div[role="radiogroup"] label {
 
 [class*="st-key-main_navigation"] [data-testid="stVerticalBlock"] {
     width: 100%;
+    gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 [class*="st-key-main_navigation"] div[data-testid="stHorizontalBlock"] {
     width: min(calc(100% - (var(--fomo-page-x) * 2)), var(--fomo-content-max)) !important;
     margin: 0 auto !important;
+    padding: 0 !important;
+    min-height: auto !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 4px !important;
 }
 
 [class*="st-key-main_navigation"] [data-testid="column"] {
     display: flex;
     align-items: center;
+    min-height: auto !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+[class*="st-key-main_navigation"] [data-testid="column"]:last-child {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
 }
 
 [class*="st-key-main_navigation"] [data-testid="column"]:first-child {
@@ -189,42 +204,75 @@ div[role="radiogroup"] label {
 
 [class*="st-key-main_navigation"] [data-testid="stElementContainer"] {
     width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-/* 메뉴 버튼: 기존 .fomo-navbar-link 알약형 디자인을 st.button에 그대로 적용 */
+/* 메뉴는 실제 st.button을 사용하되, 위의 공통 버튼/기본 Streamlit 스타일을
+   이 컨테이너 안에서만 명시적으로 초기화한다. */
 [class*="st-key-main_navigation"] .stButton > button {
     width: 100%;
-    min-height: 42px;
-    height: 42px;
-    padding: 0 16px;
-    border: none;
-    border-radius: 999px;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 12px;
+    border: none !important;
+    outline: none;
+    border-radius: 999px !important;
     background: transparent;
-    color: #4E5968;
-    font-size: 0.95rem;
-    font-weight: 700;
+    background-image: none !important;
+    box-shadow: none !important;
+    color: #4b5563;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 500;
     line-height: 1;
     white-space: nowrap;
+    text-decoration: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
+[class*="st-key-main_navigation"] .stButton > button[kind="secondary"] {
+    background: transparent !important;
+    background-image: none !important;
+    color: #4b5563 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 [class*="st-key-main_navigation"] .stButton > button:hover {
-    color: var(--accent-dark);
-    background: var(--accent-soft);
-    border-color: transparent;
+    color: #1677ff !important;
+    background: #f3f7ff !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
     transform: translateY(-1px);
+}
+
+[class*="st-key-main_navigation"] .stButton > button:focus-visible {
+    outline: 2px solid rgba(22, 119, 255, 0.35) !important;
+    outline-offset: 2px;
 }
 
 /* 활성 메뉴(현재 페이지): 전역 primary 그라데이션 대신 연한 파란 배경 + 브랜드 파란 텍스트로 표시 */
 [class*="st-key-main_navigation"] .stButton > button[kind="primary"] {
-    background: var(--accent-soft) !important;
-    color: var(--accent-dark) !important;
+    background: #eaf2ff !important;
+    background-image: none !important;
+    color: #1677ff !important;
+    border: none !important;
     box-shadow: none !important;
+    border-radius: 999px !important;
+    filter: none !important;
 }
 
 [class*="st-key-main_navigation"] .stButton > button[kind="primary"]:hover {
-    background: var(--accent-soft) !important;
-    color: var(--accent-dark) !important;
+    background: #eaf2ff !important;
+    background-image: none !important;
+    color: #1677ff !important;
+    border: none !important;
+    box-shadow: none !important;
     filter: none !important;
     transform: translateY(-1px);
 }

@@ -1,12 +1,18 @@
 /* 투자성향 결과 페이지 전용: profile_result_page 컨테이너 외부에는 적용하지 않는다. */
+.stApp:has(.st-key-profile_result_page) .block-container {
+    padding-top: 82px !important;
+}
+
+.stApp:has(.st-key-profile_result_page) .block-container > div[data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+
 .st-key-profile_result_page {
     width: min(100%, 900px);
-    margin: 10px auto 40px;
+    margin: 0 auto 40px;
     padding: clamp(18px, 3vw, 38px);
     border-radius: 28px;
-    background-color: #f8fbff;
-    background-image: radial-gradient(#cfe4ff 1.2px, transparent 1.2px);
-    background-size: 14px 14px;
+    background-color: #ffffff;
 }
 
 .st-key-profile_result_page .profile-card {
